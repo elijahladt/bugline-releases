@@ -245,6 +245,37 @@
     .alertbar { animation: clear .01s linear forwards; }
   }
 
+  /* ---- the corner box ----------------------------------------------------
+     The app swaps the bar for this square the moment its window is squeezed
+     past half the screen. A phone is past half the screen, so the page does
+     the same thing rather than cramming a bar built for 1920px into 375. */
+  .bugbox { display: none; position: relative; max-width: 330px; margin-inline: auto;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+    overflow: hidden; box-shadow: 0 18px 50px var(--shadow); }
+  .box-team { display: flex; align-items: center; gap: 7px; padding: 17px 13px; color: #fff; }
+  .box-team .abbr { font-size: 23px; font-weight: 800; letter-spacing: -.01em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .box-team .rank { font-size: 13px; font-weight: 700; opacity: .9; }
+  .box-team .pts { margin-left: auto; font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .box-team.win .abbr, .box-team.win .pts { color: var(--gold); }
+  .box-status { position: relative; display: flex; align-items: center; justify-content: center;
+    padding: 7px 0; background: var(--raised); font-size: 12px; font-weight: 700;
+    letter-spacing: .05em; color: var(--muted); }
+  .box-league { position: absolute; left: 8px; padding: 1px 6px; border-radius: 3px;
+    background: #2a2f3a; color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: .03em; }
+
+  .caption-box { display: none; }
+  @media (max-width: 640px) {
+    .bug { display: none; }
+    .bugbox { display: block; }
+    .caption-bar { display: none; }
+    .caption-box { display: block; }
+    /* the box is narrow, so the ALERT wordmark has to come down with it */
+    .bugbox .alertbar .word { font-size: 23px; padding-inline: 8px; }
+    .bugbox .alertbar .chev { font-size: 16px; }
+    .bugbox .alertbar .lg { padding-inline: 8px; font-size: 11px; }
+  }
+
   .caption { margin-top: 12px; font-size: 13px; color: var(--muted); }
 
   /* ------------------------------------------------------------ sections */
@@ -364,7 +395,32 @@
       <span class="chev"><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span></span>
     </div>
   </div>
-  <p class="caption">The bar as it actually renders &#8212; team colours pulled per team, and forced apart when two clubs share one.</p>
+  <div class="bugbox">
+    <div class="bug-controls">
+      <span class="mark"><span class="dot"></span> BUGLINE</span>
+      <span class="pill">NFL+CFB</span>
+      <span class="spacer"></span>
+      <span class="pill hot">&#128680; 6</span>
+    </div>
+    <div class="box-team win" style="background:#00543d">
+      <span class="abbr">NDSU</span>
+      <span class="pts">38</span>
+    </div>
+    <div class="box-team" style="background:#003087">
+      <span class="rank">#22</span>
+      <span class="abbr">AFA</span>
+      <span class="pts">32</span>
+    </div>
+    <div class="box-status"><span class="box-league">CFB</span> FINAL</div>
+    <div class="alertbar" aria-hidden="true">
+      <span class="lg">CFB</span>
+      <span class="chev"><span>&#8250;</span><span>&#8250;</span><span>&#8250;</span></span>
+      <span class="word">ALERT</span>
+      <span class="chev"><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span></span>
+    </div>
+  </div>
+  <p class="caption caption-bar">The bar as it actually renders &#8212; team colours pulled per team, and forced apart when two clubs share one.</p>
+  <p class="caption caption-box">The corner box &#8212; what the bar becomes when you squeeze its window past half the screen. Same data, same colours, out of the way.</p>
 </div>
 
 <div class="wrap">
