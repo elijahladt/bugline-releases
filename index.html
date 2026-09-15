@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Bugline is a live sports score bug for your Windows desktop: a broadcast-style ticker, a corner box, and a fantasy sidebar.">
+<meta name="theme-color" content="#0b0d12">
+<meta property="og:title" content="Bugline">
+<meta property="og:description" content="A live sports score bug for your desktop.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f7f8fa'/%3E%3Ccircle cx='17' cy='33' r='7' fill='%23ff4d4f'/%3E%3Ctext x='31' y='46' font-family='Inter,Helvetica,Arial,sans-serif' font-size='38' font-weight='800' fill='%23111318'%3EB%3C/text%3E%3C/svg%3E">
+<title>Bugline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800&display=swap">
+<style>
+  /* Dark-first: this is an overlay that lives on a black bar at the bottom of
+     a screen, so the dark palette is the primary one and light is the variant. */
+  :root {
+    --ground: #0b0d12;
+    --panel: #12151c;
+    --raised: #171b24;
+    --rule: #23272f;
+    --ink: #e7e9ee;
+    --muted: #9aa0ab;
+    --live: #ff4d4f;
+    --gold: #ffd54a;
+    --blue: #4f8cff;
+    --shadow: rgba(0, 0, 0, .55);
+
+    --display: 'Anton', 'Arial Narrow', sans-serif;
+    --body: 'Inter', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ground: #f2f3f6;
+      --panel: #ffffff;
+      --raised: #e9ebf0;
+      --rule: #d3d7e0;
+      --ink: #14171f;
+      --muted: #5c6270;
+      --live: #e02427;
+      --gold: #a97800;
+      --blue: #2e63d4;
+      --shadow: rgba(16, 20, 30, .16);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #f2f3f6;
+    --panel: #ffffff;
+    --raised: #e9ebf0;
+    --rule: #d3d7e0;
+    --ink: #14171f;
+    --muted: #5c6270;
+    --live: #e02427;
+    --gold: #a97800;
+    --blue: #2e63d4;
+    --shadow: rgba(16, 20, 30, .16);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-inline: 20px;
+  }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 3px; }
+
+  /* uppercase micro-labels, lifted from the app's own control strip */
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---------------------------------------------------------------- mast */
+  .mast { padding-block: 40px 0; }
+  .brandrow { display: flex; align-items: center; gap: 10px; }
+  .dot { width: 13px; height: 13px; border-radius: 50%; background: var(--live); flex: none; }
+  .brand {
+    font-family: var(--display);
+    font-size: 25px;
+    letter-spacing: .02em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .verchip {
+    margin-left: auto;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lede { padding-block: 34px 26px; display: grid; gap: 20px; }
+  h1 {
+    font-family: var(--display);
+    text-transform: uppercase;
+    line-height: .92;
+    letter-spacing: -.005em;
+    font-size: clamp(44px, 9vw, 104px);
+  }
+  h1 .sub { display: block; color: var(--live); }
+  .kicker { font-size: clamp(16px, 2.2vw, 19px); color: var(--muted); max-width: 54ch; }
+
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--live);
+    color: #fff;
+    border: none;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 15px;
+    padding: 13px 22px;
+    border-radius: 6px;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn-note { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ------------------------------------------------------- the score bug */
+  .stage { margin-block: 10px 54px; }
+  .bug {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px var(--shadow);
+  }
+  .bug-controls {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    background: var(--raised);
+    border-bottom: 1px solid var(--rule);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .bug-controls .mark { display: flex; align-items: center; gap: 6px; color: var(--ink); }
+  .bug-controls .mark .dot { width: 7px; height: 7px; }
+  .pill { border: 1px solid var(--rule); border-radius: 4px; padding: 1px 7px; }
+  .pill.hot { color: var(--live); border-color: var(--live); }
+  .spacer { flex: 1; }
+
+  .bug-row { display: flex; align-items: stretch; min-height: 92px; }
+  .league {
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding-inline: 16px;
+    font-family: var(--display);
+    font-size: 19px;
+    letter-spacing: .04em;
+    background: var(--ground);
+    color: var(--ink);
+  }
+  .team {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-inline: 18px;
+    color: #fff;
+  }
+  .team .name {
+    font-size: clamp(19px, 3.4vw, 31px);
+    font-weight: 800;
+    letter-spacing: -.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .team .rank { font-size: 13px; font-weight: 700; opacity: .9; }
+  .team .rec { font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
+  .score {
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding-inline: 18px;
+    font-size: clamp(24px, 4.2vw, 38px);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    background: var(--ground);
+  }
+  .score.win { color: var(--gold); }
+  .status {
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding-inline: 18px;
+    background: var(--ground);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .05em;
+  }
+
+  /* the ALERT run-up, exactly as the app plays it */
+  .alertbar {
+    position: absolute;
+    inset: 27px 0 0 0;
+    display: flex;
+    align-items: center;
+    background: #ff2d30;
+    color: #fff;
+    overflow: hidden;
+  }
+  .alertbar .lg {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    padding-inline: 12px;
+    background: #0b0d12;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .alertbar .chev { flex: 1; display: flex; justify-content: space-evenly; font-size: 22px; font-weight: 800; }
+  .alertbar .word { font-family: var(--display); font-size: 30px; letter-spacing: .08em; padding-inline: 14px; }
+  @keyframes strobe { 0% { background: #ff2d30; } 50% { background: #9e0c0e; } }
+  @keyframes clear { to { opacity: 0; visibility: hidden; } }
+  .alertbar { animation: strobe .3s steps(1, end) 4, clear .01s linear 1.25s forwards; }
+  @media (prefers-reduced-motion: reduce) {
+    .alertbar { animation: clear .01s linear forwards; }
+  }
+
+  .caption { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+  /* ------------------------------------------------------------ sections */
+  section { padding-block: 44px; border-top: 1px solid var(--rule); }
+  .sec-head { display: grid; gap: 8px; margin-bottom: 26px; }
+  .sec-head h2 {
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1;
+  }
+  .sec-head p { margin: 0; color: var(--muted); max-width: 60ch; }
+
+  .leagues { display: flex; flex-wrap: wrap; gap: 8px; }
+  .lchip {
+    font-family: var(--display);
+    font-size: 17px;
+    letter-spacing: .05em;
+    padding: 7px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    background: var(--panel);
+  }
+
+  /* lower-third slabs: a colour stripe and a flat edge, not uniform cards */
+  .slabs { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  @media (min-width: 720px) { .slabs { grid-template-columns: 1fr 1fr; } }
+  .slab { background: var(--panel); padding: 22px 22px 24px; display: grid; gap: 9px; align-content: start; }
+  .slab h3 { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+  .slab p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .slab .stripe { width: 34px; height: 4px; border-radius: 2px; background: var(--live); }
+  .slab:nth-child(4n+2) .stripe { background: var(--gold); }
+  .slab:nth-child(4n+3) .stripe { background: var(--blue); }
+  .slab:nth-child(4n+4) .stripe { background: var(--muted); }
+
+  /* sample rows reused from the product's own output */
+  .sample {
+    margin-top: 6px;
+    background: var(--ground);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 9px 11px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 7px;
+  }
+  .fpts { color: var(--gold); font-weight: 800; }
+  .who { font-weight: 700; }
+  .sample .dim { color: var(--muted); }
+
+  /* ------------------------------------------------------------- honesty */
+  .plain { display: grid; gap: 14px; max-width: 68ch; }
+  .plain div { display: grid; gap: 3px; }
+  .plain dt { font-weight: 700; font-size: 14.5px; }
+  .plain dd { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  footer { padding-block: 34px 56px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  footer a { text-decoration: underline; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="brandrow">
+      <span class="dot"></span>
+      <span class="brand">Bugline</span>
+      <span class="verchip">v1.6.4 &#183; Windows</span>
+    </div>
+  </header>
+
+  <div class="lede">
+    <h1>The score bug<span class="sub">for your desktop.</span></h1>
+    <p class="kicker">
+      Every game you care about on one strip at the bottom of your screen &#8212; seven
+      leagues, live fantasy points, and an alert the moment somebody scores.
+    </p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/elijahladt/bugline-releases/releases/latest">
+        <span class="dot" style="background:#fff"></span> Download for Windows
+      </a>
+      <span class="btn-note">82 MB installer &#183; free &#183; updates itself</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap stage">
+  <div class="bug">
+    <div class="bug-controls">
+      <span class="mark"><span class="dot"></span> BUGLINE</span>
+      <span class="pill">NFL+CFB</span>
+      <span class="pill">&#9679; Live</span>
+      <span class="spacer"></span>
+      <span class="pill hot">&#128680; All (6)</span>
+    </div>
+    <div class="bug-row">
+      <div class="league">CFB</div>
+      <div class="team" style="background:#00543d">
+        <span class="name">NDSU</span>
+        <span class="rec">3-0</span>
+      </div>
+      <div class="score win">38</div>
+      <div class="team" style="background:#003087">
+        <span class="rank">#22</span>
+        <span class="name">Air Force</span>
+        <span class="rec">2-1</span>
+      </div>
+      <div class="score">32</div>
+      <div class="status">FINAL</div>
+    </div>
+    <div class="alertbar" aria-hidden="true">
+      <span class="lg">CFB</span>
+      <span class="chev"><span>&#8250;</span><span>&#8250;</span><span>&#8250;</span><span>&#8250;</span><span>&#8250;</span><span>&#8250;</span></span>
+      <span class="word">ALERT</span>
+      <span class="chev"><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span><span>&#8249;</span></span>
+    </div>
+  </div>
+  <p class="caption">The bar as it actually renders &#8212; team colours pulled per team, and forced apart when two clubs share one.</p>
+</div>
+
+<div class="wrap">
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">What it follows</span>
+      <h2>Seven leagues, mixed however you like</h2>
+      <p>Switch any combination on. A Saturday of CFB and a Sunday of NFL in the same strip, or just the one game you actually care about.</p>
+    </div>
+    <div class="leagues">
+      <span class="lchip">NFL</span>
+      <span class="lchip">CFB</span>
+      <span class="lchip">NBA</span>
+      <span class="lchip">NHL</span>
+      <span class="lchip">MLB</span>
+      <span class="lchip">EPL</span>
+      <span class="lchip">UCL</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">On screen</span>
+      <h2>Built like a broadcast</h2>
+    </div>
+    <div class="slabs">
+      <article class="slab">
+        <span class="stripe"></span>
+        <h3>Scoring alerts that tell you something</h3>
+        <p>A flashing run-up covers the bar, then the score lands with the scorer's headshot, the actual play, and what it was worth in fantasy.</p>
+        <div class="sample"><span class="who">J. Gibbs</span> <span class="dim">29 CAR, 156 YDS, 2 TD &#183; 5 REC, 30 YDS</span> <span class="fpts">33.6 FPTS</span></div>
+      </article>
+
+      <article class="slab">
+        <span class="stripe"></span>
+        <h3>Fantasy points on every line</h3>
+        <p>Scored the way each sport is really scored &#8212; ESPN PPR for football, DraftKings for basketball and hockey, Fantasy Premier League for soccer &#8212; off the full box score, so a back's receiving work counts.</p>
+      </article>
+
+      <article class="slab">
+        <span class="stripe"></span>
+        <h3>A bar or a box</h3>
+        <p>Drag an edge. Narrow it past half your screen and the ticker stacks itself into a corner box, logos and all. Drag it back and it spreads out again.</p>
+      </article>
+
+      <article class="slab">
+        <span class="stripe"></span>
+        <h3>Upsets, in every league</h3>
+        <p>Rank where there is one, division where there isn't &#8212; an FCS side beating an FBS side counts &#8212; and record everywhere else, with a mismatch threshold tuned per sport because baseball records bunch up.</p>
+        <div class="sample"><span class="who">Illinois St (FCS)</span> <span class="dim">upset N Illinois</span> <span>28&#8211;24</span></div>
+      </article>
+
+      <article class="slab">
+        <span class="stripe"></span>
+        <h3>Your fantasy league, live</h3>
+        <p>Paste a Sleeper or public ESPN league link. Matchups as they move, the week's top performers across the whole league, standings, and your league's own scoring settings &#8212; in a sidebar that pins, scrolls itself and collapses.</p>
+      </article>
+
+      <article class="slab">
+        <span class="stripe"></span>
+        <h3>It stays out of the way</h3>
+        <p>Clicks pass straight through the empty space around it, and it never takes focus &#8212; so a fullscreen game stays fullscreen instead of dropping you to the desktop.</p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Before you download</span>
+      <h2>The honest part</h2>
+    </div>
+    <dl class="plain">
+      <div>
+        <dt>Windows only, for now.</dt>
+        <dd>macOS and Linux builds are configured but untested, so they aren't published.</dd>
+      </div>
+      <div>
+        <dt>Windows will warn you on first run.</dt>
+        <dd>The installer isn't code-signed. SmartScreen shows "Windows protected your PC" &#8212; More info, then Run anyway.</dd>
+      </div>
+      <div>
+        <dt>ESPN fantasy leagues have to be public.</dt>
+        <dd>League Settings &#8594; Make League Viewable to Public. A private league can only be read while signed in as a member, and Bugline won't ask for your account. Sleeper works as-is.</dd>
+      </div>
+      <div>
+        <dt>Scores come from ESPN's public endpoints.</dt>
+        <dd>No key, no account, nothing to sign up for. They're undocumented, so a change on their end can break a corner of it.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <footer>
+    <span class="dot"></span>
+    <span>Bugline v1.6.4</span>
+    <span>&#183;</span>
+    <a href="https://github.com/elijahladt/bugline-releases/releases/latest">Releases</a>
+    <span>&#183;</span>
+    <span>Ctrl + Alt + S to show or hide</span>
+  </footer>
+</div>
+</body>
+</html>
