@@ -151,6 +151,11 @@
     font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
     color: var(--ground); background: var(--muted); border-radius: 3px; padding: 1px 5px;
   }
+  /* The browser build is an offer, not a fallback: on a Chromebook it is the
+     only thing that works at all, so it gets a live tag rather than a grey one. */
+  .web-dl { margin-top: 10px; align-items: center; }
+  .web-dl a { border-color: var(--muted); }
+  .web-dl .tag { background: var(--live); color: #fff; }
   /* Only rendered once a real number arrives, so the page never shows a
      hopeful zero and never jumps as the figure lands. */
   [hidden] { display: none !important; }
@@ -411,6 +416,14 @@
       <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.7.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Intel <span class="tag">untested</span></a>
       <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.7.AppImage"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="14" rx="6.4" ry="7.6" fill="currentColor"/><ellipse cx="12" cy="6.6" rx="4.3" ry="4.6" fill="currentColor"/><ellipse cx="12" cy="15.6" rx="3.7" ry="5.4" fill="var(--panel)"/><circle cx="10.4" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="13.6" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="10.5" cy="6.4" r=".5" fill="currentColor"/><circle cx="13.5" cy="6.4" r=".5" fill="currentColor"/><path d="M12 7.6c.9 0 1.6.5 1.6 1s-.7 1-1.6 1-1.6-.5-1.6-1 .7-1 1.6-1z" fill="#f5a623"/><path d="M8.6 21c-.5.9-1.6 1.2-2.2.8-.6-.4-.3-1.3.4-2.1zM15.4 21c.5.9 1.6 1.2 2.2.8.6-.4.3-1.3-.4-2.1z" fill="#f5a623"/></svg> Linux &#183; AppImage <span class="tag">untested</span></a>
     </div>
+    <div class="alt-dl web-dl">
+      <a href="https://bugline-live.vercel.app">
+        <svg class="plat" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.1" ry="9.2"/><path d="M3.1 9.1h17.8M3.1 14.9h17.8"/>
+        </svg> Open it in your browser <span class="tag">no install</span>
+      </a>
+      <span class="btn-note">Chromebook, iPad, phone &#8212; anything running Chrome.</span>
+    </div>
   </div>
 </div>
 
@@ -522,6 +535,13 @@
 
       <article class="slab">
         <span class="stripe"></span>
+        <h3>Or run it in a tab</h3>
+        <p>Same bug, nothing to install. Press <b>Pop out</b> and it lifts into its own small window that stays on top of everything else &#8212; on a Chromebook that is the only way to get an overlay at all, since apps in the Linux container can't float above ChromeOS windows.</p>
+        <p><b>Keep it square.</b> The pop-out is a few hundred pixels wide, which is exactly where the ticker folds into its box &#8212; that is the shape to leave it. Stretched wide it has to cram a full broadcast bar into a window with no room for one, and everything shrinks to fit.</p>
+      </article>
+
+      <article class="slab">
+        <span class="stripe"></span>
         <h3>Upsets, in every league</h3>
         <p>Rank where there is one, division where there isn't &#8212; an FCS side beating an FBS side counts &#8212; and record everywhere else, with a mismatch threshold tuned per sport because baseball records bunch up.</p>
         <div class="sample"><span class="who">Illinois St (FCS)</span> <span class="dim">upset N Illinois</span> <span>28&#8211;24</span></div>
@@ -550,6 +570,10 @@
       <div>
         <dt>Only the Windows build has actually been used.</dt>
         <dd>The macOS and Linux builds come off the same source and are published, but nobody has run them for a season. Scores should be fine; the overlay behaviour &#8212; floating over a fullscreen game, clicks passing through, the tray icon &#8212; is the part to watch.</dd>
+      </div>
+      <div>
+        <dt>The browser version floats, but it doesn't vanish.</dt>
+        <dd>Pop out gives you a genuine always-on-top window &#8212; as close as a browser is allowed to get. It still keeps a window frame, and clicks land on it instead of passing straight through, so it sits beside what you're watching rather than invisibly over it. If you can run the desktop build, run the desktop build.</dd>
       </div>
       <div>
         <dt>Windows will warn you on first run.</dt>
