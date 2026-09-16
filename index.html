@@ -215,6 +215,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* Matches the app: 38px in the bar, with a shadow so a dark mark still
+     separates from a dark team colour. */
+  .team .logo {
+    width: clamp(26px, 3.6vw, 36px);
+    height: clamp(26px, 3.6vw, 36px);
+    object-fit: contain;
+    flex: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
+  }
   .team .rank { font-size: 13px; font-weight: 700; opacity: .9; }
   .team .rec { font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
   .score {
@@ -278,6 +287,10 @@
   .box-team { display: flex; align-items: center; gap: 7px; padding: 17px 13px; color: #fff; }
   .box-team .abbr { font-size: 23px; font-weight: 800; letter-spacing: -.01em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .box-team .logo {
+    width: 24px; height: 24px; object-fit: contain; flex: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
+  }
   .box-team .rank { font-size: 13px; font-weight: 700; opacity: .9; }
   .box-team .pts { margin-left: auto; font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .box-team.win .abbr, .box-team.win .pts { color: var(--gold); }
@@ -404,11 +417,13 @@
     <div class="bug-row">
       <div class="league">CFB</div>
       <div class="team" style="background:#00543d">
+        <img class="logo" src="https://a.espncdn.com/i/teamlogos/ncaa/500/2449.png" alt="North Dakota State" onerror="this.remove()" />
         <span class="name">NDSU</span>
         <span class="rec">3-0</span>
       </div>
       <div class="score win">38</div>
       <div class="team" style="background:#003087">
+        <img class="logo" src="https://a.espncdn.com/i/teamlogos/ncaa/500/2005.png" alt="Air Force" onerror="this.remove()" />
         <span class="rank">#22</span>
         <span class="name">Air Force</span>
         <span class="rec">2-1</span>
@@ -431,10 +446,12 @@
       <span class="pill hot">&#128680; 6</span>
     </div>
     <div class="box-team win" style="background:#00543d">
+      <img class="logo" src="https://a.espncdn.com/i/teamlogos/ncaa/500/2449.png" alt="North Dakota State" onerror="this.remove()" />
       <span class="abbr">NDSU</span>
       <span class="pts">38</span>
     </div>
     <div class="box-team" style="background:#003087">
+      <img class="logo" src="https://a.espncdn.com/i/teamlogos/ncaa/500/2005.png" alt="Air Force" onerror="this.remove()" />
       <span class="rank">#22</span>
       <span class="abbr">AFA</span>
       <span class="pts">32</span>
