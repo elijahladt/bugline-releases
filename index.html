@@ -138,6 +138,8 @@
   /* The other platforms are real but untested, so they are offered plainly
      rather than as a second big red button competing with the tested one. */
   .alt-dl { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .plat { width: 15px; height: 15px; flex: none; }
+  .btn .plat { width: 17px; height: 17px; }
   .alt-dl a {
     display: inline-flex; align-items: center; gap: 7px;
     border: 1px solid var(--rule); border-radius: 6px;
@@ -378,14 +380,14 @@
     </p>
     <div class="cta">
       <a class="btn" href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-Setup-1.6.6.exe">
-        <span class="dot" style="background:#fff"></span> Download for Windows
+        <svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.4 10.2 4.4v7.1H3zM11.4 4.2 21 2.9v8.6h-9.6zM3 12.7h7.2v7.1L3 18.8zM11.4 12.7H21v8.6l-9.6-1.3z"/></svg> Download for Windows
       </a>
       <span class="btn-note">82 MB installer &#183; free &#183; updates itself</span>
     </div>
     <div class="alt-dl">
-      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6-arm64.dmg">macOS &#183; Apple Silicon <span class="tag">untested</span></a>
-      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6.dmg">macOS &#183; Intel <span class="tag">untested</span></a>
-      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6.AppImage">Linux &#183; AppImage <span class="tag">untested</span></a>
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6-arm64.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Apple Silicon <span class="tag">untested</span></a>
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Intel <span class="tag">untested</span></a>
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6.AppImage"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="14" rx="6.4" ry="7.6" fill="currentColor"/><ellipse cx="12" cy="6.6" rx="4.3" ry="4.6" fill="currentColor"/><ellipse cx="12" cy="15.6" rx="3.7" ry="5.4" fill="var(--panel)"/><circle cx="10.4" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="13.6" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="10.5" cy="6.4" r=".5" fill="currentColor"/><circle cx="13.5" cy="6.4" r=".5" fill="currentColor"/><path d="M12 7.6c.9 0 1.6.5 1.6 1s-.7 1-1.6 1-1.6-.5-1.6-1 .7-1 1.6-1z" fill="#f5a623"/><path d="M8.6 21c-.5.9-1.6 1.2-2.2.8-.6-.4-.3-1.3.4-2.1zM15.4 21c.5.9 1.6 1.2 2.2.8.6-.4.3-1.3-.4-2.1z" fill="#f5a623"/></svg> Linux &#183; AppImage <span class="tag">untested</span></a>
     </div>
   </div>
 </div>
