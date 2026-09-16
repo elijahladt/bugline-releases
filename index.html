@@ -135,6 +135,27 @@
   }
   .btn:hover { filter: brightness(1.08); }
   .btn-note { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  /* The other platforms are real but untested, so they are offered plainly
+     rather than as a second big red button competing with the tested one. */
+  .alt-dl { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .alt-dl a {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--rule); border-radius: 6px;
+    padding: 8px 13px; font-size: 13.5px; font-weight: 700;
+    text-decoration: none; background: var(--panel);
+  }
+  .alt-dl a:hover { border-color: var(--muted); }
+  .alt-dl .tag {
+    font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ground); background: var(--muted); border-radius: 3px; padding: 1px 5px;
+  }
+  .steps { margin: 6px 0 0; padding-left: 18px; }
+  .steps li { margin-bottom: 2px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .88em; background: var(--raised); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere;
+  }
 
   /* ------------------------------------------------------- the score bug */
   .stage { margin-block: 10px 54px; }
@@ -345,7 +366,7 @@
     <div class="brandrow">
       <span class="dot"></span>
       <span class="brand">Bugline</span>
-      <span class="verchip">v1.6.6 &#183; Windows</span>
+      <span class="verchip">v1.6.6 &#183; Win &#183; Mac &#183; Linux</span>
     </div>
   </header>
 
@@ -356,10 +377,15 @@
       leagues, live fantasy points, and an alert the moment somebody scores.
     </p>
     <div class="cta">
-      <a class="btn" href="https://github.com/elijahladt/bugline-releases/releases/latest">
+      <a class="btn" href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-Setup-1.6.6.exe">
         <span class="dot" style="background:#fff"></span> Download for Windows
       </a>
       <span class="btn-note">82 MB installer &#183; free &#183; updates itself</span>
+    </div>
+    <div class="alt-dl">
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6-arm64.dmg">macOS &#183; Apple Silicon <span class="tag">untested</span></a>
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6.dmg">macOS &#183; Intel <span class="tag">untested</span></a>
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.6.AppImage">Linux &#183; AppImage <span class="tag">untested</span></a>
     </div>
   </div>
 </div>
@@ -494,12 +520,28 @@
     </div>
     <dl class="plain">
       <div>
-        <dt>Windows only, for now.</dt>
-        <dd>macOS and Linux builds are configured but untested, so they aren't published.</dd>
+        <dt>Only the Windows build has actually been used.</dt>
+        <dd>The macOS and Linux builds come off the same source and are published, but nobody has run them for a season. Scores should be fine; the overlay behaviour &#8212; floating over a fullscreen game, clicks passing through, the tray icon &#8212; is the part to watch.</dd>
       </div>
       <div>
         <dt>Windows will warn you on first run.</dt>
         <dd>The installer isn't code-signed. SmartScreen shows "Windows protected your PC" &#8212; More info, then Run anyway.</dd>
+      </div>
+      <div>
+        <dt>macOS will block it outright, and word it badly.</dt>
+        <dd>
+          Unsigned apps get refused with "Bugline is damaged and can't be opened." It isn't damaged &#8212; that is what macOS says about anything it can't verify.
+          <ol class="steps">
+            <li>Open the .dmg and drag Bugline to Applications.</li>
+            <li>Run <code>xattr -dr com.apple.quarantine /Applications/Bugline.app</code> in Terminal.</li>
+            <li>Open it normally.</li>
+          </ol>
+          That clears the download flag on this one app and nothing else. Signing it properly needs a paid Apple developer account; until then, auto-update doesn't work on macOS either &#8212; new versions mean a new download.
+        </dd>
+      </div>
+      <div>
+        <dt>Linux needs an X11 session.</dt>
+        <dd>Wayland doesn't let an app place itself above other windows, which is the entire job here, so pick "on Xorg" at the login screen. Make the AppImage executable first; on Ubuntu 22.04 and later it may need <code>--appimage-extract-and-run</code>.</dd>
       </div>
       <div>
         <dt>ESPN fantasy leagues have to be public.</dt>
