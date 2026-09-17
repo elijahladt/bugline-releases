@@ -1484,13 +1484,21 @@ void main() {
   // release's blockmap fetches are taken off its installer fetches. The .yml
   // files are update checks and never count. Linux AppImages publish no
   // blockmap, so those can't be separated and are counted as they are.
-  (async () => {
+  //
+  // Freshness: the last figure shows at once, then every visit - and every
+  // minute while the page stays open - asks GitHub whether anything changed.
+  // Those asks carry each page's ETag, and GitHub answers an unchanged page
+  // with a 304 that doesn't count against its 60-an-hour anonymous limit, so
+  // checking often is free. GitHub itself can take a few minutes to count a
+  // new download; that part is on their side.
+  (() => {
     const el = document.getElementById("dlcount");
     if (!el) return;
-    const KEY = "bugline_downloads_v2";
-    const TTL = 600000; // GitHub allows 60 anonymous calls an hour per address
+    const KEY = "bugline_downloads_v3";
+    const API = "https://api.github.com/repos/elijahladt/bugline-releases/releases?per_page=100&page=";
     const show = ({ win, mac, linux }) => {
       const n = win + mac + linux;
+      if (!n) return; // no figure at all beats a zero
       el.querySelector(".dl-num").innerHTML = "<b>" + n.toLocaleString() + "</b> " +
         (n === 1 ? "download" : "downloads");
       el.querySelector(".dl-win").textContent = win.toLocaleString();
@@ -1498,33 +1506,61 @@ void main() {
       el.querySelector(".dl-linux").textContent = linux.toLocaleString();
       el.hidden = false;
     };
-    try {
-      const hit = JSON.parse(localStorage.getItem(KEY) || "null");
-      if (hit && Date.now() - hit.at < TTL) { show(hit); return; }
-    } catch { /* private window, or storage turned off */ }
-    try {
-      // Every release, not just the newest 100: page through until GitHub
-      // runs out. If any page fails, show nothing rather than an undercount.
-      const releases = [];
-      for (let page = 1; page <= 20; page++) {
-        const res = await fetch("https://api.github.com/repos/elijahladt/bugline-releases/releases?per_page=100&page=" + page);
-        if (!res.ok) return;
-        const batch = await res.json();
-        releases.push(...batch);
-        if (batch.length < 100) break;
+    // pages: [{ etag, counts: { assetName: downloads, ... }[] per release }]
+    const tallyOf = (pages) => {
+      const t = { win: 0, mac: 0, linux: 0 };
+      for (const release of pages.flatMap((pg) => pg.releases)) {
+        const got = (re) => Object.entries(release).filter(([name]) => re.test(name))
+          .reduce((sum, [, n]) => sum + n, 0);
+        t.win += Math.max(0, got(/\.exe$/i) - got(/\.exe\.blockmap$/i));
+        t.mac += Math.max(0, got(/\.dmg$/i) - got(/\.dmg\.blockmap$/i));
+        t.linux += got(/\.AppImage$/i);
       }
-      const tally = { win: 0, mac: 0, linux: 0 };
-      for (const release of releases) {
-        const got = (re) => (release.assets || []).filter((a) => re.test(a.name))
-          .reduce((sum, a) => sum + (a.download_count || 0), 0);
-        tally.win += Math.max(0, got(/\.exe$/i) - got(/\.exe\.blockmap$/i));
-        tally.mac += Math.max(0, got(/\.dmg$/i) - got(/\.dmg\.blockmap$/i));
-        tally.linux += got(/\.AppImage$/i);
+      return t;
+    };
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY) || "null"); } catch { /* storage off */ }
+    if (saved) show(tallyOf(saved.pages));
+
+    let busy = false;
+    const refresh = async () => {
+      if (busy || document.hidden) return;
+      busy = true;
+      try {
+        const pages = [];
+        for (let page = 1; page <= 20; page++) {
+          const old = saved && saved.pages[page - 1];
+          const res = await fetch(API + page, {
+            cache: "no-store", // our own ETag check decides, not the browser's cache
+            headers: old && old.etag ? { "If-None-Match": old.etag } : {},
+          });
+          let entry;
+          if (res.status === 304 && old) {
+            entry = old; // unchanged, and free
+          } else if (res.ok) {
+            const batch = await res.json();
+            entry = {
+              etag: res.headers.get("ETag"),
+              count: batch.length,
+              releases: batch.map((r) => Object.fromEntries((r.assets || [])
+                .map((a) => [a.name, a.download_count || 0]))),
+            };
+          } else {
+            return; // rate limited or down: keep whatever is showing
+          }
+          pages.push(entry);
+          if (entry.count < 100) break;
+        }
+        saved = { pages };
+        show(tallyOf(pages));
+        try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch {}
+      } catch { /* offline - keep whatever is showing */ } finally {
+        busy = false;
       }
-      if (!(tally.win + tally.mac + tally.linux)) return; // no figure at all beats a zero
-      show(tally);
-      try { localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), ...tally })); } catch {}
-    } catch { /* rate limited or offline - the line simply stays away */ }
+    };
+    refresh();
+    setInterval(refresh, 60000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
   })();
 
   // Live stats under the download button. Every number is real: today's
