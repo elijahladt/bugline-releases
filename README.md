@@ -4,7 +4,7 @@ Current version: **1.6.13**
 
 Built installers for **Bugline**, a live sports score bug for your desktop —
 a broadcast-style ticker along the bottom of the screen, or a corner box,
-covering NFL, CFB, NBA, NHL, MLB, EPL and UCL.
+covering NFL, CFB, NBA, NHL, MLB, EPL, UCL, LaLiga, Bundesliga, Ligue 1 and MLS.
 
 **[Download page](https://elijahladt.github.io/bugline-releases/)** ·
 **[Run it in a browser](https://bugline-live.vercel.app)** ·
