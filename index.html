@@ -203,7 +203,7 @@
   }
 
   /* ------------------------------------------------------- the score bug */
-  .stage { margin-block: 10px 54px; }
+  .stage { margin-block: 30px 54px; }
   .bug {
     position: relative;
     background: var(--panel);
@@ -433,7 +433,19 @@
   /* ---------------------------------------------------------- hero glow
      Two slow-drifting colour washes behind the headline, faded out before
      the demo so the bug still sits on plain ground. */
-  .hero { position: relative; overflow: hidden; isolation: isolate; }
+  /* The hero is a night broadcast in both themes, so it carries the dark
+     palette itself rather than following the page. */
+  .hero {
+    --ground: #0b0d12; --panel: #12151c; --raised: #171b24; --rule: #2a2f3a;
+    --ink: #e7e9ee; --muted: #a3a9b4; --live: #ff4d4f; --gold: #ffd54a;
+    --blue: #4f8cff; --shadow: rgba(0, 0, 0, .55); --hero-glow: 1;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    padding-bottom: 78px;
+    background: #06080d;
+    color: var(--ink);
+  }
   .hero::before {
     content: "";
     position: absolute;
@@ -452,6 +464,170 @@
   @keyframes drift {
     from { transform: translate3d(-4%, -2%, 0) scale(1); }
     to { transform: translate3d(4%, 3%, 0) scale(1.08); }
+  }
+
+  /* ------------------------------------------------------ stadium backdrop
+     Back to front: sky, floodlight beams from off-frame towers, the crowd
+     with camera flashes, the field running away in perspective, the score
+     scrim that keeps the headline readable, the score ticker, then grain. Every
+     moving part is a transform or opacity change. */
+  .hero-bg { position: absolute; inset: 0; z-index: -2; pointer-events: none; }
+  .hero-bg > * { position: absolute; }
+  .sky {
+    inset: 0;
+    background:
+      radial-gradient(60% 45% at 0 0, rgba(255, 244, 214, .16), transparent 70%),
+      radial-gradient(60% 45% at 100% 0, rgba(255, 244, 214, .16), transparent 70%),
+      radial-gradient(90% 55% at 50% 62%, rgba(40, 110, 70, .22), transparent 70%),
+      linear-gradient(#04060b, #0a0f1c 40%, #08100d 62%, #0b0d12);
+  }
+
+  .beam {
+    top: -6%;
+    width: clamp(220px, 26vw, 420px);
+    height: 125%;
+    margin-left: calc(clamp(220px, 26vw, 420px) / -2);
+    transform-origin: 50% 0;
+    clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
+    background: linear-gradient(rgba(255, 246, 220, .30), rgba(255, 246, 220, .09) 45%, transparent 80%);
+    filter: blur(7px);
+    mix-blend-mode: screen;
+    animation: sweep var(--dur) ease-in-out var(--delay) infinite alternate;
+  }
+  @keyframes sweep {
+    from { transform: rotate(calc(var(--a) - 9deg)); }
+    to { transform: rotate(calc(var(--a) + 9deg)); }
+  }
+  /* the lamps themselves sit just above the frame; only their bloom shows */
+  .bloom {
+    top: -90px;
+    width: 260px;
+    height: 180px;
+    margin-left: -130px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 250, 232, .75), rgba(255, 240, 200, .18) 45%, transparent);
+    animation: bloom 7s ease-in-out infinite alternate;
+  }
+  @keyframes bloom { to { opacity: .7; } }
+
+  .crowd {
+    left: 0;
+    right: 0;
+    top: 30%;
+    height: 30%;
+    opacity: .3;
+    background:
+      radial-gradient(circle, rgba(214, 222, 240, .85) .9px, transparent 1.5px) 0 0 / 8px 6px,
+      radial-gradient(circle, rgba(255, 95, 105, .7) .9px, transparent 1.5px) 3px 2px / 11px 8px,
+      radial-gradient(circle, rgba(120, 160, 255, .6) .9px, transparent 1.5px) 6px 4px / 13px 10px;
+    -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 75%, transparent);
+    mask-image: linear-gradient(transparent, #000 30%, #000 75%, transparent);
+  }
+  .flash {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px 2px rgba(255, 255, 255, .9), 0 0 18px 4px rgba(200, 220, 255, .5);
+    opacity: 0;
+    animation: flash var(--dur) linear var(--delay) infinite;
+  }
+  @keyframes flash {
+    0%, 96%, 100% { opacity: 0; transform: scale(.4); }
+    97% { opacity: 1; transform: scale(1.2); }
+    98.5% { opacity: .5; transform: scale(1); }
+  }
+
+  .pitch {
+    left: 0;
+    right: 0;
+    top: 56%;
+    bottom: 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 55%, transparent);
+    mask-image: linear-gradient(transparent, #000 22%, #000 55%, transparent);
+  }
+  .pitch::before {
+    content: "";
+    position: absolute;
+    left: -60%;
+    right: -60%;
+    top: 0;
+    height: 220%;
+    transform: perspective(480px) rotateX(64deg);
+    transform-origin: 50% 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, .28) 0 1.5px, transparent 1.5px 5%),
+      repeating-linear-gradient(90deg, #11432a 0 5%, #0e3a24 5% 10%);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, .35);
+  }
+  .pitch::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(70% 90% at 50% 0, rgba(255, 246, 220, .14), transparent 70%);
+  }
+
+  /* the ticker: faint, and strongest on the right where there's no text */
+  .ticker {
+    inset: 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, .35) 15%, rgba(0, 0, 0, .55) 45%, #000 72%, transparent);
+    mask-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, .35) 15%, rgba(0, 0, 0, .55) 45%, #000 72%, transparent);
+  }
+  .tk-row {
+    position: absolute;
+    left: 0;
+    display: flex;
+    width: max-content;
+    font-size: var(--fs);
+    opacity: var(--o);
+    filter: var(--blur, none);
+    animation: tick var(--dur) linear infinite;
+    will-change: transform;
+  }
+  .tk-row.rev { animation-direction: reverse; }
+  @keyframes tick { to { transform: translate3d(-50%, 0, 0); } }
+  .tk {
+    display: inline-flex;
+    align-items: stretch;
+    margin-right: 1.1em;
+    border-radius: .3em;
+    overflow: hidden;
+    background: rgba(14, 17, 24, .85);
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: #fff;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .tk > * { display: flex; align-items: center; padding: .42em .55em; font-style: normal; }
+  .tk b { font-family: var(--display); font-weight: 400; letter-spacing: .05em; background: #05070b; color: #d9dde6; }
+  .tk em { background: rgba(0, 0, 0, .45); }
+  .tk .w { color: #ffd54a; }
+  .tk small { font-size: .62em; font-weight: 700; letter-spacing: .06em; color: #aab1bd; }
+  .tk small.on { color: #ff6b6d; }
+
+  .scrim {
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgba(6, 8, 13, .82) 0%, rgba(6, 8, 13, .55) 38%, rgba(6, 8, 13, .1) 68%, transparent),
+      linear-gradient(transparent 70%, #0b0d12);
+  }
+  .grain {
+    inset: 0;
+    opacity: .07;
+    mix-blend-mode: overlay;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* off screen, nothing up there needs to keep moving */
+  .hero.idle .hero-bg *, .hero.idle::before { animation-play-state: paused; }
+  @media (max-width: 640px) {
+    .scrim { background: linear-gradient(rgba(6, 8, 13, .45), rgba(6, 8, 13, .7) 60%, #0b0d12); }
+    .ticker { -webkit-mask-image: none; mask-image: none; opacity: .75; }
+    /* the headline fills the width here, so the row behind it would sit under body text */
+    .tk-row:nth-child(2) { display: none; }
   }
 
   /* ------------------------------------------------------ scroll reveals
@@ -537,6 +713,9 @@
 
   @media (prefers-reduced-motion: reduce) {
     .hero::before, .livedot::after, .btn::after { animation: none; }
+    .beam, .bloom, .tk-row { animation: none; }
+    .beam { transform: rotate(var(--a)); }
+    .flash { display: none; }
     .alt-dl a:hover, .alt-dl a:focus-visible { transform: none; }
   }
 
@@ -550,6 +729,20 @@
   <div class="splash-mark"><span class="dot"></span><span>Bugline</span></div>
 </div>
 <div class="hero">
+<div class="hero-bg" aria-hidden="true">
+  <div class="sky"></div>
+  <div class="bloom" style="left:4%"></div>
+  <div class="bloom" style="left:96%; animation-delay:-3s"></div>
+  <div class="beam" style="left:4%; --a:-34deg; --dur:11s; --delay:-2s"></div>
+  <div class="beam" style="left:4%; --a:-52deg; --dur:14s; --delay:-7s"></div>
+  <div class="beam" style="left:96%; --a:36deg; --dur:12s; --delay:-5s"></div>
+  <div class="beam" style="left:96%; --a:54deg; --dur:15s; --delay:-1s"></div>
+  <div class="crowd"></div>
+  <div class="pitch"></div>
+  <div class="scrim"></div>
+  <div class="ticker"></div>
+  <div class="grain"></div>
+</div>
 <div class="wrap">
   <header class="mast">
     <div class="brandrow">
@@ -1017,6 +1210,65 @@ void main() {
   })();
 </script>
 <script>
+  // Stadium backdrop: the ticker rows and crowd flashes are built here to
+  // keep the markup short. It's decoration only, so without this script the
+  // hero simply has the stadium and no ticker.
+  (() => {
+    const hero = document.querySelector(".hero");
+    const ticker = hero && hero.querySelector(".ticker");
+    if (!ticker) return;
+    // league, away, colour, score, home, colour, score, status, live?
+    const games = [
+      ["NFL", "KC", "#e31837", 27, "BUF", "#00338d", 24, "Q4 1:48", 1],
+      ["NBA", "BOS", "#007a33", 112, "NYK", "#006bb6", 104, "FINAL"],
+      ["EPL", "ARS", "#db0007", 2, "CHE", "#034694", 1, "78'", 1],
+      ["NHL", "TOR", "#00205b", 3, "MTL", "#af1e2d", 2, "P3 6:20", 1],
+      ["MLB", "LAD", "#005a9c", 5, "SD", "#2f241d", 4, "BOT 9", 1],
+      ["CFB", "OSU", "#bb0000", 31, "MICH", "#00274c", 27, "FINAL"],
+      ["UCL", "RMA", "#00529f", 1, "MCI", "#6cabdd", 1, "HT"],
+      ["NFL", "PHI", "#004c54", 17, "DAL", "#041e42", 13, "Q3 9:02", 1],
+      ["NBA", "LAL", "#552583", 88, "GSW", "#1d428a", 91, "Q4 5:30", 1],
+      ["EPL", "LIV", "#c8102e", 3, "MUN", "#da291c", 0, "FT"],
+      ["NHL", "EDM", "#ff4c00", 4, "VGK", "#b4975a", 4, "OT", 1],
+      ["MLB", "NYY", "#0c2340", 2, "BOS", "#bd3039", 6, "TOP 7", 1],
+    ];
+    const chip = ([lg, a, ac, as, h, hc, hs, st, live]) =>
+      `<span class="tk"><b>${lg}</b><i style="background:${ac}">${a}</i><em${as > hs ? ' class="w"' : ""}>${as}</em>` +
+      `<i style="background:${hc}">${h}</i><em${hs > as ? ' class="w"' : ""}>${hs}</em>` +
+      `<small${live ? ' class="on"' : ""}>${st}</small></span>`;
+    // Rows sit in the gaps, never behind the small text: a far row above the
+    // headline, a big faint one behind it, and a crawl along the bottom edge.
+    const rows = [
+      { pos: "top:14px", fs: "clamp(10px, 1.05vw, 14px)", o: .45, dur: 95, blur: "blur(.5px)", shift: 0 },
+      { pos: "top:27%", fs: "clamp(18px, 2.2vw, 28px)", o: .28, dur: 70, rev: true, shift: 5 },
+      { pos: "bottom:20px", fs: "clamp(12px, 1.25vw, 16px)", o: .7, dur: 82, shift: 9 },
+    ];
+    for (const r of rows) {
+      const order = games.slice(r.shift).concat(games.slice(0, r.shift));
+      const run = order.map(chip).join("");
+      const el = document.createElement("div");
+      el.className = "tk-row" + (r.rev ? " rev" : "");
+      el.style.cssText = `${r.pos}; --fs:${r.fs}; --o:${r.o}; --dur:${r.dur}s;` + (r.blur ? ` --blur:${r.blur};` : "");
+      el.innerHTML = run + run; // two identical halves, so -50% loops seamlessly
+      ticker.appendChild(el);
+    }
+
+    if (document.documentElement.classList.contains("motion")) {
+      // camera flashes: placed from a fixed seed so the crowd looks the same each visit
+      const crowd = hero.querySelector(".crowd");
+      let seed = 7;
+      const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 22; i++) {
+        const f = document.createElement("span");
+        f.className = "flash";
+        f.style.cssText = `left:${(rand() * 100).toFixed(1)}%; top:${(32 + rand() * 24).toFixed(1)}%;` +
+          ` --dur:${(4 + rand() * 7).toFixed(1)}s; --delay:${(-rand() * 10).toFixed(1)}s`;
+        crowd.after(f);
+      }
+      new IntersectionObserver(([e]) => hero.classList.toggle("idle", !e.isIntersecting)).observe(hero);
+    }
+  })();
+
   // Scroll reveals. Runs first: .motion has already hidden these, so nothing
   // may stand between that class and the observer that brings them back.
   // They wait for the splash to lift, so the hero doesn't play out unseen.
