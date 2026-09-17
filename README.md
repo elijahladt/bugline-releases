@@ -1,6 +1,6 @@
 # Bugline — releases
 
-Current version: **1.6.12**
+Current version: **1.6.13**
 
 Built installers for **Bugline**, a live sports score bug for your desktop —
 a broadcast-style ticker along the bottom of the screen, or a corner box,
@@ -19,10 +19,10 @@ the installer from. The download page is served from this repo with GitHub Pages
 
 | Platform | File | |
 | --- | --- | --- |
-| Windows | `Bugline-Setup-1.6.12.exe` | tested |
-| macOS · Apple Silicon | `Bugline-1.6.12-arm64.dmg` | untested |
-| macOS · Intel | `Bugline-1.6.12.dmg` | untested |
-| Linux · x86_64 | `Bugline-1.6.12.AppImage` | untested |
+| Windows | `Bugline-Setup-1.6.13.exe` | tested |
+| macOS · Apple Silicon | `Bugline-1.6.13-arm64.dmg` | untested |
+| macOS · Intel | `Bugline-1.6.13.dmg` | untested |
+| Linux · x86_64 | `Bugline-1.6.13.AppImage` | untested |
 
 Grab one from [the latest release](../../releases/latest) and run it.
 
