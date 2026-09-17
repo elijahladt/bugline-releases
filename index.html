@@ -11,8 +11,19 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f7f8fa'/%3E%3Ccircle cx='17' cy='33' r='7' fill='%23ff4d4f'/%3E%3Ctext x='31' y='46' font-family='Inter,Helvetica,Arial,sans-serif' font-size='38' font-weight='800' fill='%23111318'%3EB%3C/text%3E%3C/svg%3E">
 <title>Bugline</title>
 <script>
-  if (matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window)
+  if (matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window) {
     document.documentElement.classList.add("motion");
+    // The intro plays on a real load of the home page - a first visit, a
+    // reload, or arriving from outside - not when coming back to it from
+    // Features or FAQ, or via the back button.
+    try {
+      const nav = performance.getEntriesByType("navigation")[0];
+      const type = nav ? nav.type : "navigate";
+      const fromSite = document.referrer && new URL(document.referrer).origin === location.origin;
+      if (type === "back_forward" || (fromSite && type !== "reload"))
+        document.documentElement.classList.add("nosplash");
+    } catch { /* no timing API: play it */ }
+  }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -114,6 +125,31 @@
     padding: 3px 10px;
     font-variant-numeric: tabular-nums;
   }
+  /* Site tabs: real buttons, not faint links - bright text on a visible pill,
+     red on hover, and the page you're on filled in. */
+  .topnav { margin-left: auto; display: flex; gap: 6px; }
+  .topnav a {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--ink);
+    text-decoration: none;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 999px;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .topnav a:hover, .topnav a:focus-visible {
+    background: rgba(255, 77, 79, .16);
+    border-color: var(--live);
+    box-shadow: 0 0 14px rgba(255, 77, 79, .3);
+  }
+  .topnav a[aria-current="page"] { background: var(--live); border-color: var(--live); color: #fff; }
+  @media (max-width: 400px) { .topnav a { padding: 5px 10px; font-size: 13px; } }
+  .topnav + .verchip { margin-left: 0; }
+  @media (max-width: 480px) { .verchip { display: none; } }
 
   .lede { padding-block: 34px 26px; display: grid; gap: 20px; }
   h1 {
@@ -157,8 +193,9 @@
   }
   @keyframes glow { 50% { opacity: .7; } }
   .btn-note { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  /* The other platforms are real but untested, so they are offered plainly
-     rather than as a second big red button competing with the tested one. */
+  /* The other platforms are real but not yet tested by us, so they are
+     offered plainly - with an invitation to help test - rather than as a
+     second big red button competing with the tested one. */
   .alt-dl { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
   .plat { width: 15px; height: 15px; flex: none; }
   .btn .plat { width: 17px; height: 17px; }
@@ -179,8 +216,11 @@
   }
   .alt-dl .tag {
     font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--ground); background: var(--muted); border-radius: 3px; padding: 1px 5px;
+    color: #111318; background: var(--gold); border-radius: 3px; padding: 1px 5px;
   }
+  .test-note { margin: -4px 0 0; }
+  .test-note a { color: var(--ink); font-weight: 700; text-underline-offset: 3px; }
+  .test-note a:hover { color: var(--gold); }
   /* The browser build is an offer, not a fallback: on a Chromebook it is the
      only thing that works at all, so it gets a live tag rather than a grey one. */
   .web-dl { margin-top: 10px; align-items: center; }
@@ -194,6 +234,52 @@
   .dlcount .pulse {
     width: 6px; height: 6px; border-radius: 50%; background: var(--live); flex: none;
   }
+  /* Real numbers, not made-up ones: today's games come from the same public
+     ESPN scoreboards the app reads. Its own line under the button, quiet. */
+  .livestat { flex-basis: 100%; display: flex; margin-top: 2px; }
+  /* a live badge: red tag, big gold number, a slow breathing glow */
+  .ls-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    padding: 6px 16px 6px 7px;
+    border: 1px solid rgba(255, 77, 79, .6);
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255, 77, 79, .22), rgba(255, 77, 79, .06) 70%);
+    color: var(--ink);
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: .01em;
+    box-shadow: 0 0 18px rgba(255, 77, 79, .22);
+    animation: chip-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes chip-glow { 50% { box-shadow: 0 0 30px rgba(255, 77, 79, .42); border-color: rgba(255, 77, 79, .9); } }
+  .ls-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--live);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .ls-tag .livedot, .ls-tag .livedot::after { background: #fff; }
+  .livestat b {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 23px;
+    line-height: 1;
+    letter-spacing: .02em;
+    color: var(--gold);
+    margin-right: 3px;
+    vertical-align: -2px;
+  }
+  .ls-text { transition: opacity .35s ease; }
+  .ls-text.out { opacity: 0; }
   .steps { margin: 6px 0 0; padding-left: 18px; }
   .steps li { margin-bottom: 2px; }
   code {
@@ -203,7 +289,7 @@
   }
 
   /* ------------------------------------------------------- the score bug */
-  .stage { margin-block: 30px 54px; }
+  .stage { margin-block: 44px 54px; }
   .bug {
     position: relative;
     background: var(--panel);
@@ -424,6 +510,24 @@
   .who { font-weight: 700; }
   .sample .dim { color: var(--muted); }
 
+  /* the teaser's way through to the full list on features.html */
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    padding: 11px 18px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--panel);
+    font-weight: 800;
+    font-size: 14px;
+    text-decoration: none;
+    transition: border-color .18s ease, transform .18s ease;
+  }
+  .more:hover, .more:focus-visible { border-color: var(--muted); transform: translateX(2px); }
+  @media (prefers-reduced-motion: reduce) { .more:hover, .more:focus-visible { transform: none; } }
+
   /* ------------------------------------------------------------- honesty */
   .plain { display: grid; gap: 14px; max-width: 68ch; }
   .plain div { display: grid; gap: 3px; }
@@ -442,7 +546,7 @@
     position: relative;
     overflow: hidden;
     isolation: isolate;
-    padding-bottom: 78px;
+    padding-bottom: 34px;
     background: #06080d;
     color: var(--ink);
   }
@@ -469,7 +573,7 @@
   /* ------------------------------------------------------ stadium backdrop
      Back to front: sky, floodlight beams from off-frame towers, the crowd
      with camera flashes, the field running away in perspective, the score
-     scrim that keeps the headline readable, the score ticker, then grain. Every
+     scrim that keeps the headline readable, then grain. Every
      moving part is a transform or opacity change. */
   .hero-bg { position: absolute; inset: 0; z-index: -2; pointer-events: none; }
   .hero-bg > * { position: absolute; }
@@ -568,47 +672,6 @@
     background: radial-gradient(70% 90% at 50% 0, rgba(255, 246, 220, .14), transparent 70%);
   }
 
-  /* the ticker: faint, and strongest on the right where there's no text */
-  .ticker {
-    inset: 0;
-    overflow: hidden;
-    -webkit-mask-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, .35) 15%, rgba(0, 0, 0, .55) 45%, #000 72%, transparent);
-    mask-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, .35) 15%, rgba(0, 0, 0, .55) 45%, #000 72%, transparent);
-  }
-  .tk-row {
-    position: absolute;
-    left: 0;
-    display: flex;
-    width: max-content;
-    font-size: var(--fs);
-    opacity: var(--o);
-    filter: var(--blur, none);
-    animation: tick var(--dur) linear infinite;
-    will-change: transform;
-  }
-  .tk-row.rev { animation-direction: reverse; }
-  @keyframes tick { to { transform: translate3d(-50%, 0, 0); } }
-  .tk {
-    display: inline-flex;
-    align-items: stretch;
-    margin-right: 1.1em;
-    border-radius: .3em;
-    overflow: hidden;
-    background: rgba(14, 17, 24, .85);
-    border: 1px solid rgba(255, 255, 255, .12);
-    color: #fff;
-    font-weight: 800;
-    line-height: 1;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-  .tk > * { display: flex; align-items: center; padding: .42em .55em; font-style: normal; }
-  .tk b { font-family: var(--display); font-weight: 400; letter-spacing: .05em; background: #05070b; color: #d9dde6; }
-  .tk em { background: rgba(0, 0, 0, .45); }
-  .tk .w { color: #ffd54a; }
-  .tk small { font-size: .62em; font-weight: 700; letter-spacing: .06em; color: #aab1bd; }
-  .tk small.on { color: #ff6b6d; }
-
   .scrim {
     inset: 0;
     background:
@@ -625,9 +688,6 @@
   .hero.idle .hero-bg *, .hero.idle::before { animation-play-state: paused; }
   @media (max-width: 640px) {
     .scrim { background: linear-gradient(rgba(6, 8, 13, .45), rgba(6, 8, 13, .7) 60%, #0b0d12); }
-    .ticker { -webkit-mask-image: none; mask-image: none; opacity: .75; }
-    /* the headline fills the width here, so the row behind it would sit under body text */
-    .tk-row:nth-child(2) { display: none; }
   }
 
   /* ------------------------------------------------------ scroll reveals
@@ -644,6 +704,7 @@
   .lede > .reveal:nth-child(3) { --d: 160ms; }
   .lede > .reveal:nth-child(4) { --d: 240ms; }
   .lede > .reveal:nth-child(5) { --d: 320ms; }
+  .lede > .reveal:nth-child(6) { --d: 400ms; }
   /* hold the ALERT run-up until the demo is actually on screen */
   .motion .stage:not(.in) .alertbar { animation-play-state: paused; }
 
@@ -672,6 +733,7 @@
      Only exists under .motion. The script opens it with a circle at 2.4s;
      the fade on a CSS timer is only there in case the script never runs. */
   .splash { display: none; }
+  .motion.nosplash .splash { display: none; }
   .motion .splash {
     position: fixed;
     inset: 0;
@@ -734,7 +796,9 @@
 
   @media (prefers-reduced-motion: reduce) {
     .hero::before, .livedot::after, .btn::after { animation: none; }
-    .beam, .bloom, .tk-row { animation: none; }
+    .ls-text { transition: none; }
+    .ls-chip { animation: none; }
+    .beam, .bloom { animation: none; }
     .beam { transform: rotate(var(--a)); }
     .camflash { display: none; }
     .alt-dl a:hover, .alt-dl a:focus-visible { transform: none; }
@@ -761,7 +825,6 @@
   <div class="crowd"></div>
   <div class="pitch"></div>
   <div class="scrim"></div>
-  <div class="ticker"></div>
   <div class="grain"></div>
 </div>
 <div class="wrap">
@@ -769,6 +832,7 @@
     <div class="brandrow">
       <span class="dot"></span>
       <span class="brand">Bugline</span>
+      <nav class="topnav" aria-label="Site"><a href="features.html">Features</a><a href="faq.html">FAQ</a></nav>
       <span class="verchip">v1.6.9 &#183; Win &#183; Mac &#183; Linux</span>
     </div>
   </header>
@@ -785,12 +849,14 @@
       </a>
       <span class="btn-note">82 MB installer &#183; free &#183; updates itself</span>
       <span class="btn-note dlcount" id="dlcount" hidden></span>
+      <span class="livestat" id="livestat" title="Counted from today's public ESPN schedules for the seven leagues Bugline follows"><span class="ls-chip"><span class="ls-tag"><span class="livedot"></span>Live</span><span class="ls-text"><b>7</b> leagues covered live</span></span></span>
     </div>
     <div class="alt-dl reveal">
-      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9-arm64.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Apple Silicon <span class="tag">untested</span></a>
-      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Intel <span class="tag">untested</span></a>
-      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9.AppImage"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="14" rx="6.4" ry="7.6" fill="currentColor"/><ellipse cx="12" cy="6.6" rx="4.3" ry="4.6" fill="currentColor"/><ellipse cx="12" cy="15.6" rx="3.7" ry="5.4" fill="var(--panel)"/><circle cx="10.4" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="13.6" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="10.5" cy="6.4" r=".5" fill="currentColor"/><circle cx="13.5" cy="6.4" r=".5" fill="currentColor"/><path d="M12 7.6c.9 0 1.6.5 1.6 1s-.7 1-1.6 1-1.6-.5-1.6-1 .7-1 1.6-1z" fill="#f5a623"/><path d="M8.6 21c-.5.9-1.6 1.2-2.2.8-.6-.4-.3-1.3.4-2.1zM15.4 21c.5.9 1.6 1.2 2.2.8.6-.4.3-1.3-.4-2.1z" fill="#f5a623"/></svg> Linux &#183; AppImage <span class="tag">untested</span></a>
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9-arm64.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Apple Silicon <span class="tag">help us test</span></a>
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Intel <span class="tag">help us test</span></a>
+      <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9.AppImage"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="14" rx="6.4" ry="7.6" fill="currentColor"/><ellipse cx="12" cy="6.6" rx="4.3" ry="4.6" fill="currentColor"/><ellipse cx="12" cy="15.6" rx="3.7" ry="5.4" fill="var(--panel)"/><circle cx="10.4" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="13.6" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="10.5" cy="6.4" r=".5" fill="currentColor"/><circle cx="13.5" cy="6.4" r=".5" fill="currentColor"/><path d="M12 7.6c.9 0 1.6.5 1.6 1s-.7 1-1.6 1-1.6-.5-1.6-1 .7-1 1.6-1z" fill="#f5a623"/><path d="M8.6 21c-.5.9-1.6 1.2-2.2.8-.6-.4-.3-1.3.4-2.1zM15.4 21c.5.9 1.6 1.2 2.2.8.6-.4.3-1.3-.4-2.1z" fill="#f5a623"/></svg> Linux &#183; AppImage <span class="tag">help us test</span></a>
     </div>
+    <p class="btn-note test-note reveal">Only the Windows build has been tested so far. Tried a Mac or Linux build? <a href="https://github.com/elijahladt/bugline-releases/issues/new?title=Test%20report%3A%20&amp;body=Thanks%20for%20trying%20a%20build%20we%20haven%27t%20been%20able%20to%20test%20ourselves.%0A%0A%2A%2ABuild%3A%2A%2A%20%28macOS%20Apple%20Silicon%20/%20macOS%20Intel%20/%20Linux%20AppImage%29%0A%2A%2AOS%20version%3A%2A%2A%0A%2A%2ABugline%20version%3A%2A%2A%201.6.9%0A%0A%2A%2AWhat%20worked%2A%2A%20%28tick%20what%27s%20true%29%0A-%20%5B%20%5D%20It%20installs%20and%20opens%0A-%20%5B%20%5D%20Scores%20update%0A-%20%5B%20%5D%20It%20floats%20over%20a%20fullscreen%20app%20or%20game%0A-%20%5B%20%5D%20Clicks%20pass%20through%20the%20empty%20space%20around%20it%0A-%20%5B%20%5D%20Ctrl%20%2B%20Alt%20%2B%20S%20shows%20and%20hides%20it%0A%0A%2A%2AWhat%20didn%27t%2C%20or%20anything%20odd%3A%2A%2A%0A">Send a quick test report &#8594;</a></p>
     <div class="alt-dl web-dl reveal">
       <a href="https://bugline-live.vercel.app">
         <svg class="plat" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -910,27 +976,6 @@
 
       <article class="slab">
         <span class="stripe"></span>
-        <h3>A bar or a box</h3>
-        <p>Drag an edge. Narrow it past half your screen and the ticker stacks itself into a corner box, logos and all. Drag it back and it spreads out again.</p>
-      </article>
-
-      <article class="slab">
-        <span class="stripe"></span>
-        <h3>Or run it in a tab</h3>
-        <p>Same bug, nothing to install. On a Chromebook or a laptop, press <b>Pop out</b> and it lifts into its own small window that stays on top of everything else &#8212; on ChromeOS that is the only way to get an overlay at all, since apps in the Linux container can't float above ChromeOS windows.</p>
-        <p><b>Keep it square.</b> The pop-out is a few hundred pixels wide, which is exactly where the ticker folds into its box &#8212; that is the shape to leave it. Stretched wide it has to cram a full broadcast bar into a window with no room for one, and everything shrinks to fit.</p>
-        <p><b>Computers and laptops only.</b> Phones and tablets cannot float a window over what you are doing &#8212; the operating system simply does not allow it &#8212; so there is no pop-out to press. The page still loads and fills the screen, but a score bug that cannot sit on top of anything is not really the point.</p>
-      </article>
-
-      <article class="slab">
-        <span class="stripe"></span>
-        <h3>Upsets, in every league</h3>
-        <p>Rank where there is one, division where there isn't &#8212; an FCS side beating an FBS side counts &#8212; and record everywhere else, with a mismatch threshold tuned per sport because baseball records bunch up.</p>
-        <div class="sample"><span class="who">Illinois St (FCS)</span> <span class="dim">upset N Illinois</span> <span>28&#8211;24</span></div>
-      </article>
-
-      <article class="slab">
-        <span class="stripe"></span>
         <h3>Your fantasy league, live</h3>
         <p>Paste a Sleeper or public ESPN league link. Matchups as they move, the week's top performers across the whole league, standings, and your league's own scoring settings &#8212; in a sidebar that pins, scrolls itself and collapses.</p>
       </article>
@@ -941,6 +986,7 @@
         <p>Clicks pass straight through the empty space around it, and it never takes focus &#8212; so a fullscreen game stays fullscreen instead of dropping you to the desktop.</p>
       </article>
     </div>
+    <a class="more" href="features.html">See all features <span aria-hidden="true">&#8594;</span></a>
   </section>
 
   <section class="reveal">
@@ -996,6 +1042,8 @@
     <span>&#183;</span>
     <span>Ctrl + Alt + S to show or hide</span>
     <span>&#183;</span>
+    <a href="https://github.com/elijahladt/bugline-releases/issues/new?title=Feedback%3A%20&amp;body=%2A%2AWhat%27s%20on%20your%20mind%3F%2A%2A%20%28an%20idea%2C%20something%20confusing%2C%20a%20bug%2C%20anything%29%0A%0A%0A%2A%2AWhere%3A%2A%2A%20%28desktop%20app%20/%20browser%20version%20/%20this%20website%29%0A">Send feedback</a>
+    <span>&#183;</span>
     <span>Built by <a href="https://github.com/elijahladt">Elijah Ladot</a> and <a href="https://github.com/danielchang-0">Daniel Chang</a></span>
   </footer>
 </div>
@@ -1007,7 +1055,8 @@
   // it turns, and the light stays put. No library, no meshes, no textures.
   (() => {
     const canvas = document.getElementById("balls");
-    if (!canvas || !document.documentElement.classList.contains("motion")) return;
+    const root = document.documentElement.classList;
+    if (!canvas || !root.contains("motion") || root.contains("nosplash")) return;
     const gl = canvas.getContext("webgl2", { antialias: false });
     if (!gl) { canvas.remove(); return; }
 
@@ -1236,49 +1285,11 @@ void main() {
   })();
 </script>
 <script>
-  // Stadium backdrop: the ticker rows and crowd flashes are built here to
-  // keep the markup short. It's decoration only, so without this script the
-  // hero simply has the stadium and no ticker.
+  // Stadium backdrop: the crowd's camera flashes are built here to keep the
+  // markup short, and the whole scene pauses once it's scrolled off screen.
   (() => {
     const hero = document.querySelector(".hero");
-    const ticker = hero && hero.querySelector(".ticker");
-    if (!ticker) return;
-    // league, away, colour, score, home, colour, score, status, live?
-    const games = [
-      ["NFL", "KC", "#e31837", 27, "BUF", "#00338d", 24, "Q4 1:48", 1],
-      ["NBA", "BOS", "#007a33", 112, "NYK", "#006bb6", 104, "FINAL"],
-      ["EPL", "ARS", "#db0007", 2, "CHE", "#034694", 1, "78'", 1],
-      ["NHL", "TOR", "#00205b", 3, "MTL", "#af1e2d", 2, "P3 6:20", 1],
-      ["MLB", "LAD", "#005a9c", 5, "SD", "#2f241d", 4, "BOT 9", 1],
-      ["CFB", "OSU", "#bb0000", 31, "MICH", "#00274c", 27, "FINAL"],
-      ["UCL", "RMA", "#00529f", 1, "MCI", "#6cabdd", 1, "HT"],
-      ["NFL", "PHI", "#004c54", 17, "DAL", "#041e42", 13, "Q3 9:02", 1],
-      ["NBA", "LAL", "#552583", 88, "GSW", "#1d428a", 91, "Q4 5:30", 1],
-      ["EPL", "LIV", "#c8102e", 3, "MUN", "#da291c", 0, "FT"],
-      ["NHL", "EDM", "#ff4c00", 4, "VGK", "#b4975a", 4, "OT", 1],
-      ["MLB", "NYY", "#0c2340", 2, "BOS", "#bd3039", 6, "TOP 7", 1],
-    ];
-    const chip = ([lg, a, ac, as, h, hc, hs, st, live]) =>
-      `<span class="tk"><b>${lg}</b><i style="background:${ac}">${a}</i><em${as > hs ? ' class="w"' : ""}>${as}</em>` +
-      `<i style="background:${hc}">${h}</i><em${hs > as ? ' class="w"' : ""}>${hs}</em>` +
-      `<small${live ? ' class="on"' : ""}>${st}</small></span>`;
-    // Rows sit in the gaps, never behind the small text: a far row above the
-    // headline, a big faint one behind it, and a crawl along the bottom edge.
-    const rows = [
-      { pos: "top:14px", fs: "clamp(10px, 1.05vw, 14px)", o: .45, dur: 95, blur: "blur(.5px)", shift: 0 },
-      { pos: "top:27%", fs: "clamp(18px, 2.2vw, 28px)", o: .28, dur: 70, rev: true, shift: 5 },
-      { pos: "bottom:20px", fs: "clamp(12px, 1.25vw, 16px)", o: .7, dur: 82, shift: 9 },
-    ];
-    for (const r of rows) {
-      const order = games.slice(r.shift).concat(games.slice(0, r.shift));
-      const run = order.map(chip).join("");
-      const el = document.createElement("div");
-      el.className = "tk-row" + (r.rev ? " rev" : "");
-      el.style.cssText = `${r.pos}; --fs:${r.fs}; --o:${r.o}; --dur:${r.dur}s;` + (r.blur ? ` --blur:${r.blur};` : "");
-      el.innerHTML = run + run; // two identical halves, so -50% loops seamlessly
-      ticker.appendChild(el);
-    }
-
+    if (!hero) return;
     if (document.documentElement.classList.contains("motion")) {
       // camera flashes: placed from a fixed seed so the crowd looks the same each visit
       const crowd = hero.querySelector(".crowd");
@@ -1310,7 +1321,8 @@ void main() {
       document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
     };
     const splash = document.querySelector(".splash");
-    if (!splash) {
+    if (splash && document.documentElement.classList.contains("nosplash")) splash.remove();
+    if (!splash || !splash.isConnected) {
       reveal();
     } else {
       // Reveals start as the circle opens, so the hero lands inside it.
@@ -1437,6 +1449,80 @@ void main() {
       show(n);
       try { localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), n })); } catch {}
     } catch { /* rate limited or offline - the line simply stays away */ }
+  })();
+
+  // Live stats under the download button. Every number is real: today's
+  // games and how many are in progress, counted from the public ESPN
+  // scoreboards for the leagues Bugline follows, plus the league count.
+  // If ESPN can't be reached it just says "7 leagues covered live".
+  (() => {
+    const el = document.getElementById("livestat");
+    const text = el && el.querySelector(".ls-text");
+    if (!text) return;
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const BOARDS = [
+      "football/nfl", "football/college-football?groups=80", "football/college-football?groups=81",
+      "baseball/mlb", "basketball/nba", "hockey/nhl", "soccer/eng.1", "soccer/uefa.champions",
+    ];
+    // one/many: the label is picked from the number on screen, so "1 game" reads right mid-count
+    let stats = [{ n: 7, one: "league covered live", many: "leagues covered live" }];
+    let i = 0;
+
+    // count up from 0 over ~1.5s, easing out so it settles on the number
+    let raf = 0;
+    const render = (v, { one, many }) => { text.innerHTML = `<b>${v.toLocaleString()}</b> ${v === 1 ? one : many}`; };
+    const countUp = (stat) => {
+      cancelAnimationFrame(raf);
+      if (still) return render(stat.n, stat);
+      const t0 = performance.now();
+      const step = (now) => {
+        const p = Math.min((now - t0) / 1500, 1);
+        render(Math.round(stat.n * (1 - Math.pow(1 - p, 3))), stat);
+        if (p < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+    const next = () => {
+      if (document.hidden || stats.length < 2) return;
+      i = (i + 1) % stats.length;
+      text.classList.add("out");
+      setTimeout(() => { countUp(stats[i]); text.classList.remove("out"); }, 350);
+    };
+
+    const load = async () => {
+      const d = new Date();
+      const day = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+      const lists = await Promise.all(BOARDS.map(async (b) => {
+        try {
+          const [board, query] = b.split("?");
+          const url = `https://site.api.espn.com/apis/site/v2/sports/${board}/scoreboard?dates=${day}&limit=300` +
+            (query ? `&${query}` : "");
+          const res = await fetch(url);
+          return res.ok ? (await res.json()).events || [] : [];
+        } catch { return []; }
+      }));
+      const seen = new Set();
+      let games = 0, live = 0;
+      for (const ev of lists.flat()) {
+        if (seen.has(ev.id)) continue; // a game can sit in more than one board
+        seen.add(ev.id);
+        games++;
+        if (ev.status && ev.status.type && ev.status.type.state === "in") live++;
+      }
+      const fresh = [];
+      if (games) fresh.push({ n: games, one: "game tracked today", many: "games tracked today" });
+      if (live) fresh.push({ n: live, one: "game live right now", many: "games live right now" });
+      fresh.push(stats[stats.length - 1]);
+      return fresh;
+    };
+
+    countUp(stats[0]);
+    load().then((fresh) => {
+      stats = fresh;
+      i = 0;
+      countUp(stats[0]);
+      if (!still) setInterval(next, 6000);
+    });
   })();
 </script>
 </body>

@@ -1,0 +1,3 @@
+# Local tooling output - never part of the site
+.claude/
+.playwright-mcp/
