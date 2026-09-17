@@ -10,6 +10,10 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f7f8fa'/%3E%3Ccircle cx='17' cy='33' r='7' fill='%23ff4d4f'/%3E%3Ctext x='31' y='46' font-family='Inter,Helvetica,Arial,sans-serif' font-size='38' font-weight='800' fill='%23111318'%3EB%3C/text%3E%3C/svg%3E">
 <title>Bugline</title>
+<script>
+  if (matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window)
+    document.documentElement.classList.add("motion");
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800&display=swap">
@@ -27,6 +31,7 @@
     --gold: #ffd54a;
     --blue: #4f8cff;
     --shadow: rgba(0, 0, 0, .55);
+    --hero-glow: 1;
 
     --display: 'Anton', 'Arial Narrow', sans-serif;
     --body: 'Inter', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -43,6 +48,7 @@
       --gold: #a97800;
       --blue: #2e63d4;
       --shadow: rgba(16, 20, 30, .16);
+      --hero-glow: .6;
     }
   }
   :root[data-theme="light"] {
@@ -56,6 +62,7 @@
     --gold: #a97800;
     --blue: #2e63d4;
     --shadow: rgba(16, 20, 30, .16);
+    --hero-glow: .6;
   }
 
   * { box-sizing: border-box; }
@@ -134,6 +141,21 @@
     border-radius: 6px;
   }
   .btn:hover { filter: brightness(1.08); }
+  /* the glow lives on its own layer so the pulse is an opacity change the
+     compositor can run, rather than a box-shadow repaint every frame */
+  .btn { position: relative; }
+  .btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: 0 0 24px 3px var(--live);
+    opacity: .3;
+    pointer-events: none;
+    animation: glow 2.8s ease-in-out infinite;
+  }
+  @keyframes glow { 50% { opacity: .7; } }
   .btn-note { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   /* The other platforms are real but untested, so they are offered plainly
      rather than as a second big red button competing with the tested one. */
@@ -146,7 +168,15 @@
     padding: 8px 13px; font-size: 13.5px; font-weight: 700;
     text-decoration: none; background: var(--panel);
   }
-  .alt-dl a:hover { border-color: var(--muted); }
+  .alt-dl a { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .alt-dl a:hover, .alt-dl a:focus-visible {
+    transform: translateY(-2px);
+    border-color: var(--muted);
+    box-shadow: 0 8px 20px var(--shadow), 0 0 14px rgba(79, 140, 255, .28);
+  }
+  .web-dl a:hover, .web-dl a:focus-visible {
+    box-shadow: 0 8px 20px var(--shadow), 0 0 16px rgba(255, 77, 79, .35);
+  }
   .alt-dl .tag {
     font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
     color: var(--ground); background: var(--muted); border-radius: 3px; padding: 1px 5px;
@@ -197,6 +227,17 @@
   .bug-controls .mark .dot { width: 7px; height: 7px; }
   .pill { border: 1px solid var(--rule); border-radius: 4px; padding: 1px 7px; }
   .pill.hot { color: var(--live); border-color: var(--live); }
+  .pill.live { display: inline-flex; align-items: center; gap: 5px; }
+  .livedot { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--live); flex: none; }
+  .livedot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--live);
+    animation: ping 1.6s ease-out infinite;
+  }
+  @keyframes ping { 0% { transform: scale(1); opacity: .75; } 80%, 100% { transform: scale(2.4); opacity: 0; } }
   .spacer { flex: 1; }
 
   .bug-row { display: flex; align-items: stretch; min-height: 92px; }
@@ -250,6 +291,11 @@
     background: var(--ground);
   }
   .score.win { color: var(--gold); }
+  /* the score landing once the ALERT run-up clears */
+  @keyframes land { 0% { background: var(--gold); color: #111318; } }
+  @keyframes pop { 0% { transform: scale(1.5); } }
+  .score.flash { animation: land .9s ease-out; }
+  .box-team .pts.flash { animation: pop .6s cubic-bezier(.2, .8, .3, 1.4); }
   .status {
     flex: none;
     display: flex;
@@ -384,11 +430,126 @@
   .plain dt { font-weight: 700; font-size: 14.5px; }
   .plain dd { margin: 0; color: var(--muted); font-size: 14.5px; }
 
+  /* ---------------------------------------------------------- hero glow
+     Two slow-drifting colour washes behind the headline, faded out before
+     the demo so the bug still sits on plain ground. */
+  .hero { position: relative; overflow: hidden; isolation: isolate; }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: -30% -10% -10%;
+    z-index: -1;
+    background:
+      radial-gradient(40% 50% at 18% 45%, rgba(255, 77, 79, .16), transparent 70%),
+      radial-gradient(35% 45% at 82% 30%, rgba(79, 140, 255, .13), transparent 70%),
+      radial-gradient(30% 40% at 60% 90%, rgba(255, 213, 74, .06), transparent 70%);
+    opacity: var(--hero-glow);
+    -webkit-mask-image: linear-gradient(#000 55%, transparent);
+    mask-image: linear-gradient(#000 55%, transparent);
+    pointer-events: none;
+    animation: drift 24s ease-in-out infinite alternate;
+  }
+  @keyframes drift {
+    from { transform: translate3d(-4%, -2%, 0) scale(1); }
+    to { transform: translate3d(4%, 3%, 0) scale(1.08); }
+  }
+
+  /* ------------------------------------------------------ scroll reveals
+     .motion is set in <head> only when motion is allowed and the observer
+     exists, so without it nothing is ever hidden. */
+  .motion .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .2, 1);
+    transition-delay: var(--d, 0ms);
+  }
+  .motion .reveal.in { opacity: 1; transform: none; }
+  .lede > .reveal:nth-child(2) { --d: 80ms; }
+  .lede > .reveal:nth-child(3) { --d: 160ms; }
+  .lede > .reveal:nth-child(4) { --d: 240ms; }
+  .lede > .reveal:nth-child(5) { --d: 320ms; }
+  /* hold the ALERT run-up until the demo is actually on screen */
+  .motion .stage:not(.in) .alertbar { animation-play-state: paused; }
+
+  /* -------------------------------------------------------------- splash
+     Only exists under .motion. The script opens it with a circle at 2.4s;
+     the fade on a CSS timer is only there in case the script never runs. */
+  .splash { display: none; }
+  .motion .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #0b0d12;
+    color: #e7e9ee;
+    cursor: pointer;
+    animation: splash-out .5s ease 4s forwards;
+  }
+  @keyframes splash-out { to { opacity: 0; visibility: hidden; } }
+
+  /* The exit: a hole opens from the centre and the site shows through it,
+     while the balls fly past the camera. --hole has to be a registered
+     length to animate; where @property isn't supported the splash simply
+     lifts when the animation ends. */
+  @property --hole { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  .motion .splash.leaving {
+    cursor: default;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--hole), #000 calc(var(--hole) + 1px));
+    mask-image: radial-gradient(circle at 50% 50%, transparent var(--hole), #000 calc(var(--hole) + 1px));
+    animation: hole .9s cubic-bezier(.65, 0, .25, 1) forwards;
+  }
+  @keyframes hole { from { --hole: 0px; } to { --hole: 75vmax; } }
+  .splash.leaving .splash-mark { animation: mark-out .6s cubic-bezier(.5, 0, .75, 0) forwards; }
+  @keyframes mark-out { from { transform: scale(1); opacity: 1; } to { transform: scale(2.6); opacity: 0; } }
+  /* the site pulls back into place as it comes through the circle */
+  .entering .hero { animation: zoom-in 1s cubic-bezier(.2, .7, .2, 1); }
+  @keyframes zoom-in { from { transform: scale(1.12); } }
+
+  .splash-mark {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: .22em;
+    font-family: var(--display);
+    font-size: clamp(48px, 11vw, 124px);
+    letter-spacing: .02em;
+    line-height: 1;
+    text-transform: uppercase;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, .6);
+    animation: bubble .8s cubic-bezier(0.68, -0.55, 0.265, 1.55) .15s both;
+  }
+  .splash-mark .dot { width: .42em; height: .42em; box-shadow: 0 0 .5em rgba(255, 77, 79, .6); }
+  @keyframes bubble {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* The balls are one WebGL canvas: each is ray-traced analytically per
+     pixel (sphere, ellipsoid, cylinder), so they turn on real 3D axes under
+     a fixed light. Without WebGL2 the canvas is dropped and the wordmark
+     plays alone. */
+  .splash canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero::before, .livedot::after, .btn::after { animation: none; }
+    .alt-dl a:hover, .alt-dl a:focus-visible { transform: none; }
+  }
+
   footer { padding-block: 34px 56px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   footer a { text-decoration: underline; text-underline-offset: 3px; }
 </style>
 </head>
 <body>
+<div class="splash" aria-hidden="true">
+  <canvas id="balls"></canvas>
+  <div class="splash-mark"><span class="dot"></span><span>Bugline</span></div>
+</div>
+<div class="hero">
 <div class="wrap">
   <header class="mast">
     <div class="brandrow">
@@ -399,24 +560,24 @@
   </header>
 
   <div class="lede">
-    <h1>The score bug<span class="sub">for your desktop.</span></h1>
-    <p class="kicker">
+    <h1 class="reveal">The score bug<span class="sub">for your desktop.</span></h1>
+    <p class="kicker reveal">
       Every game you care about on one strip at the bottom of your screen &#8212; seven
       leagues, live fantasy points, and an alert the moment somebody scores.
     </p>
-    <div class="cta">
+    <div class="cta reveal">
       <a class="btn" href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-Setup-1.6.9.exe">
         <svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.4 10.2 4.4v7.1H3zM11.4 4.2 21 2.9v8.6h-9.6zM3 12.7h7.2v7.1L3 18.8zM11.4 12.7H21v8.6l-9.6-1.3z"/></svg> Download for Windows
       </a>
       <span class="btn-note">82 MB installer &#183; free &#183; updates itself</span>
       <span class="btn-note dlcount" id="dlcount" hidden></span>
     </div>
-    <div class="alt-dl">
+    <div class="alt-dl reveal">
       <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9-arm64.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Apple Silicon <span class="tag">untested</span></a>
       <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9.dmg"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 1.4c0 1.1-.4 2.2-1.1 3-.9 1-2.3 1.7-3.4 1.6-.2-1.1.4-2.3 1.1-3 .7-.9 2.1-1.5 3.4-1.6zM20.9 17.1c-.6 1.3-.8 1.8-1.5 3-1 1.5-2.4 3.5-4.1 3.5-1.5 0-1.9-1-4-1s-2.5 1-4 1c-1.7 0-3-1.8-4-3.3-2.8-4.4-3.1-9.5-1.4-12.2C3.2 6.2 5.3 5.1 7.3 5.1c2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.8 0 3.6 1 5 2.6-4.4 2.4-3.7 8.7.6 9.4z"/></svg> macOS &#183; Intel <span class="tag">untested</span></a>
       <a href="https://github.com/elijahladt/bugline-releases/releases/latest/download/Bugline-1.6.9.AppImage"><svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="14" rx="6.4" ry="7.6" fill="currentColor"/><ellipse cx="12" cy="6.6" rx="4.3" ry="4.6" fill="currentColor"/><ellipse cx="12" cy="15.6" rx="3.7" ry="5.4" fill="var(--panel)"/><circle cx="10.4" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="13.6" cy="6.2" r="1.15" fill="var(--panel)"/><circle cx="10.5" cy="6.4" r=".5" fill="currentColor"/><circle cx="13.5" cy="6.4" r=".5" fill="currentColor"/><path d="M12 7.6c.9 0 1.6.5 1.6 1s-.7 1-1.6 1-1.6-.5-1.6-1 .7-1 1.6-1z" fill="#f5a623"/><path d="M8.6 21c-.5.9-1.6 1.2-2.2.8-.6-.4-.3-1.3.4-2.1zM15.4 21c.5.9 1.6 1.2 2.2.8.6-.4.3-1.3-.4-2.1z" fill="#f5a623"/></svg> Linux &#183; AppImage <span class="tag">untested</span></a>
     </div>
-    <div class="alt-dl web-dl">
+    <div class="alt-dl web-dl reveal">
       <a href="https://bugline-live.vercel.app">
         <svg class="plat" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
           <circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.1" ry="9.2"/><path d="M3.1 9.1h17.8M3.1 14.9h17.8"/>
@@ -426,13 +587,14 @@
     </div>
   </div>
 </div>
+</div>
 
-<div class="wrap stage">
+<div class="wrap stage reveal">
   <div class="bug">
     <div class="bug-controls">
       <span class="mark"><span class="dot"></span> BUGLINE</span>
       <span class="pill">NFL+CFB</span>
-      <span class="pill">&#9679; Live</span>
+      <span class="pill live"><span class="livedot"></span>Live</span>
       <span class="spacer"></span>
       <span class="pill hot">&#128680; All (6)</span>
     </div>
@@ -491,7 +653,7 @@
 </div>
 
 <div class="wrap">
-  <section>
+  <section class="reveal">
     <div class="sec-head">
       <span class="eyebrow">What it follows</span>
       <h2>Seven leagues, mixed however you like</h2>
@@ -508,7 +670,7 @@
     </div>
   </section>
 
-  <section>
+  <section class="reveal">
     <div class="sec-head">
       <span class="eyebrow">On screen</span>
       <h2>Built like a broadcast</h2>
@@ -562,7 +724,7 @@
     </div>
   </section>
 
-  <section>
+  <section class="reveal">
     <div class="sec-head">
       <span class="eyebrow">Before you download</span>
       <h2>The honest part</h2>
@@ -607,7 +769,7 @@
     </dl>
   </section>
 
-  <footer>
+  <footer class="reveal">
     <span class="dot"></span>
     <span>Bugline v1.6.9</span>
     <span>&#183;</span>
@@ -620,6 +782,311 @@
 </div>
 
 <script>
+  // Splash balls. A full-screen fragment shader intersects each pixel's ray
+  // with every ball's true shape in that ball's own rotated frame, then paints
+  // the markings from where the ray landed - so seams wrap round the ball as
+  // it turns, and the light stays put. No library, no meshes, no textures.
+  (() => {
+    const canvas = document.getElementById("balls");
+    if (!canvas || !document.documentElement.classList.contains("motion")) return;
+    const gl = canvas.getContext("webgl2", { antialias: false });
+    if (!gl) { canvas.remove(); return; }
+
+    // Soccer panels: pentagons sit on the 12 icosahedron vertices, hexagons
+    // on its 20 face centres - a truncated icosahedron, the real pattern.
+    const PHI = (1 + Math.sqrt(5)) / 2;
+    const ico = [];
+    for (const a of [-1, 1]) for (const b of [-1, 1]) ico.push([0, a, b * PHI], [a, b * PHI, 0], [b * PHI, 0, a]);
+    const near = (u, v) => Math.abs(Math.hypot(u[0] - v[0], u[1] - v[1], u[2] - v[2]) - 2) < 1e-6;
+    const faces = [];
+    for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) for (let k = j + 1; k < 12; k++)
+      if (near(ico[i], ico[j]) && near(ico[j], ico[k]) && near(ico[i], ico[k]))
+        faces.push([0, 1, 2].map((n) => ico[i][n] + ico[j][n] + ico[k][n]));
+    const vec = (v) => { const l = Math.hypot(...v); return `vec3(${v.map((n) => (n / l).toFixed(5)).join(",")})`; };
+    const DIRS = `const vec3 DIRS[32] = vec3[32](${[...ico, ...faces].map(vec).join(",")});`;
+
+    const VS = `#version 300 es
+in vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0., 1.); }`;
+
+    const FS = `#version 300 es
+precision highp float;
+uniform float uH;          // canvas height, device px
+uniform float uDpr;
+uniform vec4 uObj[5];      // centre x, y (css px), radius (css px), opacity
+uniform mat3 uRot[5];      // ball frame -> world
+out vec4 outColor;
+${DIRS}
+const vec3 LIGHT = vec3(-.5, .64, .58);
+
+vec3 basketball(vec3 s) {
+  float seam = min(min(abs(s.x), abs(s.y)), abs(abs(s.z) - (.56 + .32 * s.y * s.y)));
+  float pebble = .94 + .06 * sin(s.x * 190.) * sin(s.y * 190.) * sin(s.z * 190.);
+  return mix(vec3(.1, .04, .02), vec3(.86, .41, .12) * pebble, smoothstep(.016, .03, seam));
+}
+vec3 soccer(vec3 s) {
+  float best = 9., second = 9.; float pent = 0.;
+  for (int i = 0; i < 32; i++) {
+    // hexagons reach further from their centre than pentagons do
+    float a = acos(clamp(dot(s, DIRS[i]), -1., 1.)) - (i < 12 ? 0. : .0775);
+    if (a < best) { second = best; best = a; pent = i < 12 ? 1. : 0.; }
+    else if (a < second) { second = a; }
+  }
+  vec3 panel = mix(vec3(.93, .93, .94), vec3(.06, .065, .08), pent);
+  return mix(vec3(.3, .31, .34), panel, smoothstep(.01, .025, second - best));
+}
+vec3 baseball(vec3 s) {
+  float g = s.z - .72 * (s.x * s.x - s.y * s.y);   // the figure-eight seam
+  float stitch = smoothstep(.2, .6, abs(sin(atan(s.y, s.x) * 24.)));
+  float lace = smoothstep(.03, .016, abs(abs(g) - .05)) * stitch;
+  float seam = smoothstep(.014, .006, abs(g));
+  return mix(vec3(.95, .92, .85), vec3(.8, .09, .13), max(lace, seam * .7));
+}
+vec3 football(vec3 q) {
+  float top = step(0., q.y);
+  float line = smoothstep(.05, .032, abs(q.z)) * step(abs(q.x), .4) * top;
+  float tick = smoothstep(.024, .014, abs(fract(q.x / .1 + .5) - .5) * .1)
+             * step(abs(q.z), .13) * step(abs(q.x), .35) * top;
+  float stripe = smoothstep(.04, .025, abs(abs(q.x) - .66));
+  float pebble = .93 + .07 * sin(q.x * 160.) * sin(q.y * 160.) * sin(q.z * 160.);
+  return mix(vec3(.46, .21, .08) * pebble, vec3(.95, .93, .88), max(max(line, tick), stripe));
+}
+vec3 puck(vec3 q, vec3 n) {
+  if (n.y > .5) {
+    vec3 c = vec3(.14, .145, .16);
+    c = mix(c, vec3(.92, .27, .28), smoothstep(.05, .03, abs(length(q.xz) - .62)));
+    return mix(c, vec3(.9), smoothstep(.15, .12, length(q.xz - vec2(.3, 0.))));
+  }
+  if (n.y < -.5) return vec3(.04);
+  return vec3(.05 + .025 * sin(atan(q.z, q.x) * 90.));   // grip ridges round the edge
+}
+
+void main() {
+  vec2 px = vec2(gl_FragCoord.x, uH - gl_FragCoord.y) / uDpr;
+  vec3 L = normalize(LIGHT);
+  vec4 acc = vec4(0.);
+  for (int i = 0; i < 5; i++) {
+    vec4 o = uObj[i];
+    mat3 R = uRot[i];
+    mat3 Rt = transpose(R);
+    vec2 p = vec2(px.x - o.x, o.y - px.y) / max(o.z, 1.);
+    vec3 ro = Rt * vec3(p, 4.);
+    vec3 rd = Rt * vec3(0., 0., -1.);
+    vec3 q; vec3 n; float cov;
+
+    if (i == 3) {
+      // puck: a cylinder along its own y axis
+      const float h = .32;
+      float a = rd.x * rd.x + rd.z * rd.z;
+      float b = ro.x * rd.x + ro.z * rd.z;
+      float c = ro.x * ro.x + ro.z * ro.z - 1.;
+      float D = b * b - a * c;
+      float ts = (-b - sqrt(max(D, 0.))) / max(a, 1e-4);
+      vec3 qs = ro + ts * rd;
+      float tc = ((rd.y < 0. ? h : -h) - ro.y) / (abs(rd.y) < 1e-4 ? 1e-4 : rd.y);
+      vec3 qc = ro + tc * rd;
+      float mSide = min(D / max(fwidth(D), 1e-6), (h - abs(qs.y)) / max(fwidth(qs.y), 1e-6));
+      float mCap = (1. - length(qc.xz)) / max(fwidth(length(qc.xz)), 1e-6);
+      cov = clamp(max(mSide, mCap) + .5, 0., 1.);
+      bool onCap = length(qc.xz) <= 1. && (D < 0. || abs(qs.y) > h || tc < ts);
+      q = onCap ? qc : qs;
+      n = onCap ? vec3(0., sign(qc.y), 0.) : normalize(vec3(qs.x, 0., qs.z));
+    } else {
+      // everything else is an ellipsoid; the football is stretched along x
+      vec3 e = i == 2 ? vec3(1., .6, .6) : vec3(1.);
+      vec3 oe = ro / e, de = rd / e;
+      float a = dot(de, de), b = dot(oe, de), c = dot(oe, oe) - 1.;
+      float D = b * b - a * c;
+      cov = clamp(D / max(fwidth(D), 1e-6) + .5, 0., 1.);
+      q = ro + (-b - sqrt(max(D, 0.))) / a * rd;
+      n = normalize(q / (e * e));
+    }
+
+    float alpha = cov * o.w;
+    if (alpha <= 0.) continue;
+    vec3 s = normalize(q);
+    vec3 base; float shine;
+    if (i == 0) { base = baseball(s); shine = .25; }
+    else if (i == 1) { base = soccer(s); shine = .6; }
+    else if (i == 2) { base = football(q); shine = .3; }
+    else if (i == 3) { base = puck(q, n); shine = .55; }
+    else { base = basketball(s); shine = .3; }
+
+    vec3 N = R * n;
+    float diff = max(dot(N, L), 0.);
+    float spec = pow(max(dot(N, normalize(L + vec3(0., 0., 1.))), 0.), 42.) * shine;
+    float rim = pow(1. - max(N.z, 0.), 3.);
+    vec3 col = base * (.15 + .95 * diff) + spec + rim * vec3(.4, .13, .15) * .5;
+    acc = vec4(col * alpha, alpha) + acc * (1. - alpha);
+  }
+  outColor = acc;
+}`;
+
+    const compile = (type, src) => {
+      const sh = gl.createShader(type);
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      return gl.getShaderParameter(sh, gl.COMPILE_STATUS) ? sh : null;
+    };
+    const vs = compile(gl.VERTEX_SHADER, VS), fs = compile(gl.FRAGMENT_SHADER, FS);
+    const prog = gl.createProgram();
+    if (vs && fs) { gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog); }
+    if (!vs || !fs || !gl.getProgramParameter(prog, gl.LINK_STATUS)) { canvas.remove(); return; }
+    gl.useProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(prog, "aPos");
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    const uH = gl.getUniformLocation(prog, "uH");
+    const uDpr = gl.getUniformLocation(prog, "uDpr");
+    const uObj = gl.getUniformLocation(prog, "uObj");
+    const uRot = gl.getUniformLocation(prog, "uRot");
+
+    // Row-major 3x3 helpers; flipped to column-major on upload.
+    const mul = (A, B) => A.map((row) => [0, 1, 2].map((j) => row[0] * B[0][j] + row[1] * B[1][j] + row[2] * B[2][j]));
+    const rotX = (a) => [[1, 0, 0], [0, Math.cos(a), -Math.sin(a)], [0, Math.sin(a), Math.cos(a)]];
+    const rotZ = (a) => [[Math.cos(a), -Math.sin(a), 0], [Math.sin(a), Math.cos(a), 0], [0, 0, 1]];
+    const rotY = (a) => [[Math.cos(a), 0, Math.sin(a)], [0, 1, 0], [-Math.sin(a), 0, Math.cos(a)]];
+    const axisAngle = ([x, y, z], a) => {
+      const l = Math.hypot(x, y, z); x /= l; y /= l; z /= l;
+      const c = Math.cos(a), s = Math.sin(a), k = 1 - c;
+      return [[c + x * x * k, x * y * k - z * s, x * z * k + y * s],
+              [y * x * k + z * s, c + y * y * k, y * z * k - x * s],
+              [z * x * k - y * s, z * y * k + x * s, c + z * z * k]];
+    };
+
+    // Slot order is the draw order, back to front, and matches the shader.
+    // x/y place each ball as a share of the screen; from is the corner it
+    // drifts in from; size is its radius as a share of the short side.
+    const balls = [
+      { x: .36, y: .26, size: .042, op: .7, from: [0, -1], delay: .45, orbit: 20, period: 10, phase: .6,
+        rot: (t) => axisAngle([.6, 1, .15], t * .7) },                                        // baseball, far back
+      { x: .85, y: .2, size: .062, op: .85, from: [1, -1], delay: .15, orbit: 18, period: 9, phase: .25,
+        rot: (t) => axisAngle([1, .45, .2], -t * .55) },                                      // soccer
+      { x: .21, y: .8, size: .095, op: 1, from: [-1, 1], delay: .25, orbit: 12, period: 8.5, phase: .45,
+        rot: (t) => mul(rotZ(.4 + .25 * Math.sin(t * .9)), mul(rotY(-.35), rotX(t * 2.4))) }, // football, spiralling
+      { x: .84, y: .8, size: .07, op: 1, from: [1, 1], delay: .35, orbit: 10, period: 7, phase: .8,
+        rot: (t) => mul(rotZ(.18 * Math.sin(t * .8)), mul(rotX(1.05), rotY(t * 1.1))) },      // puck, tipped back
+      { x: .15, y: .21, size: .085, op: 1, from: [-1, -1], delay: .05, orbit: 14, period: 7.5, phase: .1,
+        rot: (t) => axisAngle([.3, 1, .2], t * .8) },                                         // basketball
+    ];
+
+    let dpr = 1;
+    const resize = () => {
+      dpr = Math.min(devicePixelRatio || 1, 1.5);
+      canvas.width = Math.round(innerWidth * dpr);
+      canvas.height = Math.round(innerHeight * dpr);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+    resize();
+    addEventListener("resize", resize);
+
+    const obj = new Float32Array(20), rot = new Float32Array(45);
+    const t0 = performance.now();
+    const frame = (now) => {
+      if (!canvas.isConnected) { removeEventListener("resize", resize); return; }
+      const t = (now - t0) / 1000;
+      const w = innerWidth, h = innerHeight, vmin = Math.min(w, h);
+      // once the circle starts opening, fly every ball out past the camera
+      const leftAt = Number(canvas.parentElement.dataset.leaving || 0);
+      const fly = leftAt ? Math.pow(Math.min((now - leftAt) / 900, 1), 2) : 0;
+      balls.forEach((b, i) => {
+        const e = Math.min(Math.max((t - b.delay) / 1.4, 0), 1);
+        const ease = 1 - Math.pow(1 - e, 3);
+        const ang = (t / b.period + b.phase) * Math.PI * 2;
+        const x = b.x * w + b.from[0] * w * .55 * (1 - ease) + Math.sin(ang) * b.orbit;
+        const y = b.y * h + b.from[1] * h * .55 * (1 - ease) + Math.cos(ang) * b.orbit * .6;
+        obj[i * 4] = w / 2 + (x - w / 2) * (1 + 1.4 * fly);
+        obj[i * 4 + 1] = h / 2 + (y - h / 2) * (1 + 1.4 * fly);
+        obj[i * 4 + 2] = b.size * vmin * (.5 + .5 * ease) * (1 + 3 * fly);
+        obj[i * 4 + 3] = b.op * ease;
+        const m = b.rot(t);
+        for (let c = 0; c < 3; c++) for (let r = 0; r < 3; r++) rot[i * 9 + c * 3 + r] = m[r][c];
+      });
+      gl.uniform1f(uH, canvas.height);
+      gl.uniform1f(uDpr, dpr);
+      gl.uniform4fv(uObj, obj);
+      gl.uniformMatrix3fv(uRot, false, rot);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  })();
+</script>
+<script>
+  // Scroll reveals. Runs first: .motion has already hidden these, so nothing
+  // may stand between that class and the observer that brings them back.
+  // They wait for the splash to lift, so the hero doesn't play out unseen.
+  if (document.documentElement.classList.contains("motion")) {
+    const reveal = () => {
+      const io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          e.target.classList.add("in");
+          io.unobserve(e.target);
+        }
+      }, { rootMargin: "0px 0px -10% 0px" });
+      document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+    };
+    const splash = document.querySelector(".splash");
+    if (!splash) {
+      reveal();
+    } else {
+      // Reveals start as the circle opens, so the hero lands inside it.
+      // The time goes on the element for the ball renderer to read.
+      const leave = () => {
+        if (splash.classList.contains("leaving")) return;
+        splash.dataset.leaving = performance.now();
+        splash.classList.add("leaving");
+        document.documentElement.classList.add("entering");
+        reveal();
+      };
+      splash.addEventListener("animationend", (e) => {
+        if (e.target !== splash) return; // the wordmark's animations bubble up here too
+        if (!splash.classList.contains("leaving")) reveal(); // the CSS fallback fired first
+        splash.remove();
+      });
+      setTimeout(leave, 2400);
+      splash.addEventListener("click", leave);
+      addEventListener("keydown", leave, { once: true });
+    }
+  }
+
+  // The demo as a live update: NDSU trails 31-32 while the ALERT run-up
+  // plays, then the touchdown lands as it clears. The markup holds the final
+  // score, so with motion reduced the page just shows that.
+  if (document.documentElement.classList.contains("motion")) {
+    const land = (root, lead, trail, setPts) => {
+      const alert = root.querySelector(".alertbar");
+      if (!alert) return;
+      setPts(31);
+      lead.classList.remove("win");
+      trail.classList.add("win");
+      alert.addEventListener("animationend", (ev) => {
+        if (ev.animationName !== "clear") return;
+        setPts(38);
+        lead.classList.add("win");
+        trail.classList.remove("win");
+      });
+    };
+    const bar = document.querySelector(".bug");
+    const [ndsu, afa] = bar ? bar.querySelectorAll(".score") : [];
+    if (ndsu && afa) land(bar, ndsu, afa, (n) => {
+      ndsu.textContent = n;
+      if (n === 38) ndsu.classList.add("flash");
+    });
+    const box = document.querySelector(".bugbox");
+    const [ndsuRow, afaRow] = box ? box.querySelectorAll(".box-team") : [];
+    const pts = ndsuRow && ndsuRow.querySelector(".pts");
+    if (pts && afaRow) land(box, ndsuRow, afaRow, (n) => {
+      pts.textContent = n;
+      if (n === 38) pts.classList.add("flash");
+    });
+  }
+
   // Downloads, counted from the releases themselves. Installers only:
   // the .yml and .blockmap files are what the updater fetches to check for a
   // new version, so counting them would inflate the figure with polling.
