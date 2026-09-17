@@ -229,7 +229,56 @@
   /* Only rendered once a real number arrives, so the page never shows a
      hopeful zero and never jumps as the figure lands. */
   [hidden] { display: none !important; }
-  .dlcount { display: inline-flex; align-items: center; gap: 6px; }
+  .dlcount { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: help; }
+  .dlcount .dl-num { border-bottom: 1px dotted var(--muted); }
+  /* hover or focus the count for the split by platform */
+  .dl-split {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    z-index: 5;
+    width: 210px;
+    display: grid;
+    gap: 5px;
+    padding: 11px 13px;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--panel);
+    box-shadow: 0 12px 30px var(--shadow);
+    color: var(--muted);
+    font-size: 12.5px;
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 4px);
+    transition: opacity .16s ease, transform .16s ease, visibility .16s;
+    pointer-events: none;
+  }
+  .dl-split::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    margin-left: -6px;
+    border: 6px solid transparent;
+    border-top-color: var(--rule);
+  }
+  .dlcount:hover .dl-split, .dlcount:focus-visible .dl-split, .dlcount:focus .dl-split {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+  }
+  .dl-row { display: flex; justify-content: space-between; gap: 12px; }
+  .dl-row span { color: var(--ink); font-weight: 700; }
+  .dl-row b { color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .dl-foot { margin-top: 3px; padding-top: 7px; border-top: 1px solid var(--rule); font-size: 11.5px; line-height: 1.4; }
+  @media (prefers-reduced-motion: reduce) { .dl-split { transition: none; } }
+  /* on narrow screens the count sits near the left edge, so open rightwards */
+  @media (max-width: 640px) {
+    .dl-split { left: 0; transform: translateY(4px); }
+    .dl-split::after { left: 24px; }
+    .dlcount:hover .dl-split, .dlcount:focus-visible .dl-split, .dlcount:focus .dl-split { transform: none; }
+  }
   .dlcount b { color: var(--ink); font-weight: 800; }
   .dlcount .pulse {
     width: 6px; height: 6px; border-radius: 50%; background: var(--live); flex: none;
@@ -848,7 +897,15 @@
         <svg class="plat" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.4 10.2 4.4v7.1H3zM11.4 4.2 21 2.9v8.6h-9.6zM3 12.7h7.2v7.1L3 18.8zM11.4 12.7H21v8.6l-9.6-1.3z"/></svg> Download for Windows
       </a>
       <span class="btn-note">82 MB installer &#183; free &#183; updates itself</span>
-      <span class="btn-note dlcount" id="dlcount" hidden></span>
+      <span class="btn-note dlcount" id="dlcount" tabindex="0" aria-describedby="dl-split" hidden>
+        <span class="pulse"></span><span class="dl-num"></span>
+        <span class="dl-split" id="dl-split" role="tooltip">
+          <span class="dl-row"><span>Windows</span><b class="dl-win"></b></span>
+          <span class="dl-row"><span>macOS</span><b class="dl-mac"></b></span>
+          <span class="dl-row"><span>Linux</span><b class="dl-linux"></b></span>
+          <span class="dl-foot">Installer downloads from GitHub. Auto-updates aren't counted.</span>
+        </span>
+      </span>
       <span class="livestat" id="livestat" title="Counted from today's public ESPN schedules for the seven leagues Bugline follows"><span class="ls-chip"><span class="ls-tag"><span class="livedot"></span>Live</span><span class="ls-text"><b>7</b> leagues covered live</span></span></span>
     </div>
     <div class="alt-dl reveal">
@@ -1421,33 +1478,44 @@ void main() {
     }
   }
 
-  // Downloads, counted from the releases themselves. Installers only:
-  // the .yml and .blockmap files are what the updater fetches to check for a
-  // new version, so counting them would inflate the figure with polling.
+  // Downloads, counted from the releases themselves - installers only, and
+  // not auto-updates. When the app updates itself it fetches the release's
+  // .blockmap alongside the installer, and nothing else does, so each
+  // release's blockmap fetches are taken off its installer fetches. The .yml
+  // files are update checks and never count. Linux AppImages publish no
+  // blockmap, so those can't be separated and are counted as they are.
   (async () => {
     const el = document.getElementById("dlcount");
     if (!el) return;
-    const KEY = "bugline_downloads";
+    const KEY = "bugline_downloads_v2";
     const TTL = 600000; // GitHub allows 60 anonymous calls an hour per address
-    const show = (n) => {
-      el.innerHTML = '<span class="pulse"></span><span><b>' + n.toLocaleString() +
-        '</b> ' + (n === 1 ? "download" : "downloads") + '</span>';
+    const show = ({ win, mac, linux }) => {
+      const n = win + mac + linux;
+      el.querySelector(".dl-num").innerHTML = "<b>" + n.toLocaleString() + "</b> " +
+        (n === 1 ? "download" : "downloads");
+      el.querySelector(".dl-win").textContent = win.toLocaleString();
+      el.querySelector(".dl-mac").textContent = mac.toLocaleString();
+      el.querySelector(".dl-linux").textContent = linux.toLocaleString();
       el.hidden = false;
     };
     try {
       const hit = JSON.parse(localStorage.getItem(KEY) || "null");
-      if (hit && Date.now() - hit.at < TTL) { show(hit.n); return; }
+      if (hit && Date.now() - hit.at < TTL) { show(hit); return; }
     } catch { /* private window, or storage turned off */ }
     try {
       const res = await fetch("https://api.github.com/repos/elijahladt/bugline-releases/releases?per_page=100");
       if (!res.ok) return;
-      const n = (await res.json())
-        .flatMap((r) => r.assets || [])
-        .filter((a) => /.(exe|dmg|AppImage)$/i.test(a.name))
-        .reduce((sum, a) => sum + (a.download_count || 0), 0);
-      if (!n) return; // no figure at all beats a zero
-      show(n);
-      try { localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), n })); } catch {}
+      const tally = { win: 0, mac: 0, linux: 0 };
+      for (const release of await res.json()) {
+        const got = (re) => (release.assets || []).filter((a) => re.test(a.name))
+          .reduce((sum, a) => sum + (a.download_count || 0), 0);
+        tally.win += Math.max(0, got(/\.exe$/i) - got(/\.exe\.blockmap$/i));
+        tally.mac += Math.max(0, got(/\.dmg$/i) - got(/\.dmg\.blockmap$/i));
+        tally.linux += got(/\.AppImage$/i);
+      }
+      if (!(tally.win + tally.mac + tally.linux)) return; // no figure at all beats a zero
+      show(tally);
+      try { localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), ...tally })); } catch {}
     } catch { /* rate limited or offline - the line simply stays away */ }
   })();
 
