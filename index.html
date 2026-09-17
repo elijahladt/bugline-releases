@@ -1503,10 +1503,18 @@ void main() {
       if (hit && Date.now() - hit.at < TTL) { show(hit); return; }
     } catch { /* private window, or storage turned off */ }
     try {
-      const res = await fetch("https://api.github.com/repos/elijahladt/bugline-releases/releases?per_page=100");
-      if (!res.ok) return;
+      // Every release, not just the newest 100: page through until GitHub
+      // runs out. If any page fails, show nothing rather than an undercount.
+      const releases = [];
+      for (let page = 1; page <= 20; page++) {
+        const res = await fetch("https://api.github.com/repos/elijahladt/bugline-releases/releases?per_page=100&page=" + page);
+        if (!res.ok) return;
+        const batch = await res.json();
+        releases.push(...batch);
+        if (batch.length < 100) break;
+      }
       const tally = { win: 0, mac: 0, linux: 0 };
-      for (const release of await res.json()) {
+      for (const release of releases) {
         const got = (re) => (release.assets || []).filter((a) => re.test(a.name))
           .reduce((sum, a) => sum + (a.download_count || 0), 0);
         tally.win += Math.max(0, got(/\.exe$/i) - got(/\.exe\.blockmap$/i));
